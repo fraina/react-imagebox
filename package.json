@@ -1,0 +1,26 @@
+{
+  "name": "react-image-lightbox",
+  "version": "0.0.1",
+  "description": "A simple image lightbox component for react",
+  "main": "dist/react-lightbox.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Fraina/react-image-lightbox.git"
+  },
+  "keywords": [
+    "react",
+    "react component",
+    "lightbox",
+    "pop-up"
+  ],
+  "author": "Fraina <jscaem@gmail.com> (http://github.com/Fraina)",
+  "license": "MIT",
+  "bugs": {
+    "url": "http://github.com/Fraina/react-image-lightbox/issues"
+  },
+  "homepage": "http://github.com/Fraina/react-image-lightbox#readme",
+  "dependencies": {
+    "classnames": "^2.2.3",
+    "lodash": "^4.0.0"
+  }
+}

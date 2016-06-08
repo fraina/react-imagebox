@@ -1,0 +1,236 @@
+.image-lightbox{
+  width:100%;
+  height:100%;
+  position: fixed;
+  top: 0;
+  display: -webkit-flex;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1000;
+};
+
+.image-lightbox[hidden]{
+  display: none;
+}
+
+.image-lightbox-overlay{
+  position:fixed;
+  top: 0;
+  left: 0;
+  width:100%;
+  height:100%;
+  z-index:1002;
+  background: none repeat scroll 0% 0% #000;
+}
+
+.image-lightbox-content {
+  overflow: hidden;
+}
+
+.image-lightbox-wrapper {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-direction: column;
+  flex-direction: column;
+  z-index: 1003;
+  position: relative;
+}
+
+.image-lightbox-titleBar {
+  overflow: hidden;
+  display: block;
+  position: relative;
+}
+
+.image-lightbox-btn--close {
+  z-index: 1004;
+}
+
+.image-lightbox[data-title='bottom'] #image-lightbox-content { order: 1 }
+.image-lightbox[data-title='bottom'] #image-lightbox-titleBar { order: 2 }
+
+// ----- default theme ----- //
+
+// --- base: image-lightbox --- //
+
+.image-lightbox-wrapper {
+  border-radius: 3px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, .9);
+  background-color: white;
+}
+
+.image-lightbox-content {
+  padding: 20px 24px 30px;
+}
+
+.image-lightbox-titleBar {
+  padding: 11px 37px 11px 24px;
+  border-bottom: 1px #ccc solid;
+}
+
+.image-lightbox-btn--close,
+.image-lightbox-titleBar .image-lightbox-title {
+  font-weight: bold;
+  font-size: 18px;
+  text-shadow: 0 -1px 1px rgba(0, 0, 0, .2);
+}
+
+.image-lightbox-btn--close {
+  transition: all .5s;
+  position: absolute;
+  right: 11px;
+  top: 11px;
+  color: #c1c1c1;
+  background: none;
+  border: none;
+  outline: none;
+}
+
+.image-lightbox-btn--close:hover {
+  color: #000;
+}
+
+.image-lightbox.is-active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.image-lightbox[data-title='bottom'] #image-lightbox-content { box-shadow: 0 1px 1px rgba(0, 0, 0, .3) }
+.image-lightbox[data-title='bottom'] #image-lightbox-titleBar { box-shadow: none; border-top: 1px #ccc solid }
+
+// --- feature: lightbox --- //
+
+.image-lightbox[data-type='lightbox'] .image-lightbox-content {
+  padding: 7px 7px 7px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items:center;
+  justify-content:center;
+}
+
+.image-lightbox[data-type='lightbox'] ul {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  z-index: 1005;
+}
+
+.image-lightbox[data-type='lightbox'] li {
+  position: absolute;
+  top: 0;
+  opacity: 0;
+  width: inherit;
+  height: inherit;
+}
+
+.image-lightbox[data-type='lightbox'] li.is-active {
+  opacity: 1;
+}
+
+.image-lightbox[data-type='lightbox'] li img {
+  width: inherit;
+  height: inherit;
+  margin: auto;
+  display: block;
+}
+
+.image-lightbox[data-type='lightbox'] .image-lightbox-titleBar {
+  padding-left: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.image-lightbox[data-type='lightbox'] .image-lightbox-titleBar .image-lightbox-title {
+  font-size: 12px;
+  font-weight: normal;
+  text-align: left;
+  text-shadow: none;
+  left: 90px;
+  text-overflow : ellipsis;
+  white-space : nowrap;
+  width: calc(80% - 90px);
+  position: absolute;
+  display: block;
+  overflow: hidden;
+}
+
+.lightbox-btns {
+  float: left;
+}
+
+.lightbox-btn {
+  border: none;
+  outline: none;
+  background: none;
+  transition: all .5s;
+  float: left;
+  color: #c1c1c1;
+  font-weight: bold;
+  text-shadow: 0 -1px 1px rgba(0, 0, 0, 0.2);
+}
+
+.lightbox-btn:hover {
+  color: #000;
+}
+
+.lightbox-btn[disabled] {
+  color: #eee;
+}
+
+.lightbox-imgIndex {
+  float: left;
+  font-size: .8em;
+  color: #424242;
+}
+
+// --- loading spin --- //
+
+.image-lightbox-loading:before,
+.image-lightbox-loading:after {
+  content: '';
+  display: block;
+  border-radius: 15px;
+  position: absolute;
+}
+
+.image-lightbox-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+}
+
+.image-lightbox-loading[hidden] {
+  display: none;
+}
+
+.image-lightbox-loading:before {
+  width: 32px;
+  height: 32px;
+  margin: -16px 0 0 -16px;
+  box-shadow: 0 2px 2px rgba(0, 0, 0, .3);
+  background: transparent;
+  animation: spin .3s infinite linear;
+}
+
+.image-lightbox-loading:after {
+  width: 30px;
+  height: 30px;
+  margin: -15px 0 0 -15px;
+  background: #fff;
+}
+
+@keyframes spin{
+  0% {
+    transform: rotateZ(0deg);
+  }
+  100% {
+    transform: rotateZ(360deg);
+  }
+}

@@ -1,11 +1,11 @@
 {
-  "name": "react-image-lightbox",
+  "name": "react-imagebox",
   "version": "0.0.1",
   "description": "A simple image lightbox component for react",
-  "main": "dist/react-lightbox.js",
+  "main": "dist/react-imagebox.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Fraina/react-image-lightbox.git"
+    "url": "git+https://github.com/Fraina/react-imagebox.git"
   },
   "keywords": [
     "react",
@@ -16,9 +16,9 @@
   "author": "Fraina <jscaem@gmail.com> (http://github.com/Fraina)",
   "license": "MIT",
   "bugs": {
-    "url": "http://github.com/Fraina/react-image-lightbox/issues"
+    "url": "http://github.com/Fraina/react-imagebox/issues"
   },
-  "homepage": "http://github.com/Fraina/react-image-lightbox#readme",
+  "homepage": "http://github.com/Fraina/react-imagebox#readme",
   "dependencies": {
     "classnames": "^2.2.3",
     "lodash": "^4.0.0"

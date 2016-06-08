@@ -71,13 +71,13 @@ var possibleConstructorReturn = function (self, call) {
   return call && (typeof call === "object" || typeof call === "function") ? call : self;
 };
 
-var LightModal = function (_Component) {
-  inherits(LightModal, _Component);
+var ImageModal = function (_Component) {
+  inherits(ImageModal, _Component);
 
-  function LightModal(props) {
-    classCallCheck(this, LightModal);
+  function ImageModal(props) {
+    classCallCheck(this, ImageModal);
 
-    var _this = possibleConstructorReturn(this, Object.getPrototypeOf(LightModal).call(this, props));
+    var _this = possibleConstructorReturn(this, Object.getPrototypeOf(ImageModal).call(this, props));
 
     var defaultTitlebarConfig = {
       enable: true,
@@ -137,11 +137,11 @@ var LightModal = function (_Component) {
     return _this;
   }
 
-  createClass(LightModal, [{
+  createClass(ImageModal, [{
     key: 'onKeyDown',
     value: function onKeyDown(e) {
       if (this.props.show && e.keyCode === 27) {
-        this.props.closeLightbox();
+        this.props.closeImagebox();
       }
     }
   }, {
@@ -378,7 +378,7 @@ var LightModal = function (_Component) {
       var closeButtonClassName = _state4.closeButtonClassName;
       var currentIndex = _state4.currentIndex;
       var children = _state4.children;
-      var closeLightbox = this.props.closeLightbox;
+      var closeImagebox = this.props.closeImagebox;
 
 
       var isLastImage = children.length === currentIndex + 1;
@@ -404,7 +404,7 @@ var LightModal = function (_Component) {
 
       return React__default.createElement(
         'div',
-        { className: classNames('image-lightbox-titleBar', titleBarClass) },
+        { className: classNames('imagebox-titleBar', titleBarClass) },
         React__default.createElement(
           'div',
           { className: 'lightbox-btns' },
@@ -432,12 +432,12 @@ var LightModal = function (_Component) {
             nextText
           )
         ),
-        React__default.createElement('span', { className: 'image-lightbox-title', dangerouslySetInnerHTML: { __html: !this.state.isSwitching ? text : '<br />' } }),
+        React__default.createElement('span', { className: 'imagebox-title', dangerouslySetInnerHTML: { __html: !this.state.isSwitching ? text : '<br />' } }),
         closeButton && React__default.createElement(
           'button',
           {
-            onClick: closeLightbox,
-            className: classNames('image-lightbox-btn--close', closeButtonClassName) },
+            onClick: closeImagebox,
+            className: classNames('imagebox-btn--close', closeButtonClassName) },
           closeText
         )
       );
@@ -498,7 +498,7 @@ var LightModal = function (_Component) {
       var _props = this.props;
       var overlayOpacity = _props.overlayOpacity;
       var show = _props.show;
-      var closeLightbox = _props.closeLightbox;
+      var closeImagebox = _props.closeImagebox;
       var className = _props.className;
       var _state5 = this.state;
       var currentWidth = _state5.currentWidth;
@@ -524,18 +524,18 @@ var LightModal = function (_Component) {
 
       return React__default.createElement(
         'div',
-        { className: classNames('image-lightbox', { 'is-active': show }),
+        { className: classNames('imagebox', { 'is-active': show }),
           'data-type': 'lightbox',
           'data-title': titleBar.enable ? titleBar.position : null,
           style: { transition: this.state.transition } },
         React__default.createElement(
           'div',
-          { className: classNames('image-lightbox-wrapper', className) },
+          { className: classNames('imagebox-wrapper', className) },
           titleBar.enable && this.renderTitleBar(),
           React__default.createElement(
             'div',
-            { className: 'image-lightbox-content', ref: 'image-lightbox-content', style: contentStyle, onClick: this.onClickContent },
-            React__default.createElement('span', { className: 'image-lightbox-loading', hidden: !this.state.isSwitching }),
+            { className: 'imagebox-content', ref: 'imagebox-content', style: contentStyle, onClick: this.onClickContent },
+            React__default.createElement('span', { className: 'imagebox-loading', hidden: !this.state.isSwitching }),
             React__default.createElement(
               'ul',
               null,
@@ -543,22 +543,22 @@ var LightModal = function (_Component) {
             )
           )
         ),
-        React__default.createElement('div', { className: 'image-lightbox-overlay', style: { opacity: overlayOpacity }, onClick: closeLightbox })
+        React__default.createElement('div', { className: 'imagebox-overlay', style: { opacity: overlayOpacity }, onClick: closeImagebox })
       );
     }
   }]);
-  return LightModal;
+  return ImageModal;
 }(React.Component);
 
-var LightboxModal = LightModal;
+var ImageboxModal = ImageModal;
 
-var Lightbox = function (_Component) {
-  inherits(Lightbox, _Component);
+var Imagebox = function (_Component) {
+  inherits(Imagebox, _Component);
 
-  function Lightbox(props) {
-    classCallCheck(this, Lightbox);
+  function Imagebox(props) {
+    classCallCheck(this, Imagebox);
 
-    var _this = possibleConstructorReturn(this, Object.getPrototypeOf(Lightbox).call(this, props));
+    var _this = possibleConstructorReturn(this, Object.getPrototypeOf(Imagebox).call(this, props));
 
     var defaultConfig = {
       overlayOpacity: 0.75,
@@ -573,14 +573,14 @@ var Lightbox = function (_Component) {
     return _this;
   }
 
-  createClass(Lightbox, [{
-    key: 'openLightbox',
-    value: function openLightbox(params) {
+  createClass(Imagebox, [{
+    key: 'openImagebox',
+    value: function openImagebox(params) {
       this.setState({ show: true, index: lodash.get(params, 'index') });
     }
   }, {
-    key: 'closeLightbox',
-    value: function closeLightbox() {
+    key: 'closeImagebox',
+    value: function closeImagebox() {
       this.setState({ show: false });
     }
   }, {
@@ -594,8 +594,8 @@ var Lightbox = function (_Component) {
       return childrenSource.map(function (child, index) {
         var childProps = _extends({
           key: index,
-          openLightbox: _this2.openLightbox.bind(_this2),
-          closeLightbox: _this2.closeLightbox.bind(_this2)
+          openImagebox: _this2.openImagebox.bind(_this2),
+          closeImagebox: _this2.closeImagebox.bind(_this2)
         }, _this2.state);
         for (var j in _this2.state) {
           childProps[j] = _this2.state[j];
@@ -613,36 +613,36 @@ var Lightbox = function (_Component) {
       );
     }
   }]);
-  return Lightbox;
+  return Imagebox;
 }(React.Component);
 
-var LightboxTrigger = function (_Component2) {
-  inherits(LightboxTrigger, _Component2);
+var ImageboxTrigger = function (_Component2) {
+  inherits(ImageboxTrigger, _Component2);
 
-  function LightboxTrigger() {
-    classCallCheck(this, LightboxTrigger);
-    return possibleConstructorReturn(this, Object.getPrototypeOf(LightboxTrigger).apply(this, arguments));
+  function ImageboxTrigger() {
+    classCallCheck(this, ImageboxTrigger);
+    return possibleConstructorReturn(this, Object.getPrototypeOf(ImageboxTrigger).apply(this, arguments));
   }
 
-  createClass(LightboxTrigger, [{
+  createClass(ImageboxTrigger, [{
     key: 'render',
     value: function render() {
       var _this4 = this;
 
       var childProps = {};
       Object.keys(this.props).map(function (key) {
-        if (key !== 'children' && key !== 'openLightbox' && key !== 'className') {
+        if (key !== 'children' && key !== 'openImagebox' && key !== 'className') {
           childProps[key] = _this4.props[key];
-        } else if (key === 'openLightbox') {
+        } else if (key === 'openImagebox') {
           childProps['onClick'] = _this4.props[key];
         }
       });
       return React.cloneElement(this.props.children, childProps);
     }
   }]);
-  return LightboxTrigger;
+  return ImageboxTrigger;
 }(React.Component);
 
-exports.LightboxModal = LightboxModal;
-exports.Lightbox = Lightbox;
-exports.LightboxTrigger = LightboxTrigger;
+exports.ImageboxModal = ImageboxModal;
+exports.Imagebox = Imagebox;
+exports.ImageboxTrigger = ImageboxTrigger;

@@ -1,4 +1,4 @@
-.image-lightbox{
+.imagebox{
   width:100%;
   height:100%;
   position: fixed;
@@ -12,11 +12,11 @@
   z-index: 1000;
 };
 
-.image-lightbox[hidden]{
+.imagebox[hidden]{
   display: none;
 }
 
-.image-lightbox-overlay{
+.imagebox-overlay{
   position:fixed;
   top: 0;
   left: 0;
@@ -26,11 +26,11 @@
   background: none repeat scroll 0% 0% #000;
 }
 
-.image-lightbox-content {
+.imagebox-content {
   overflow: hidden;
 }
 
-.image-lightbox-wrapper {
+.imagebox-wrapper {
   display: -webkit-flex;
   display: flex;
   -webkit-flex-direction: column;
@@ -39,46 +39,46 @@
   position: relative;
 }
 
-.image-lightbox-titleBar {
+.imagebox-titleBar {
   overflow: hidden;
   display: block;
   position: relative;
 }
 
-.image-lightbox-btn--close {
+.imagebox-btn--close {
   z-index: 1004;
 }
 
-.image-lightbox[data-title='bottom'] #image-lightbox-content { order: 1 }
-.image-lightbox[data-title='bottom'] #image-lightbox-titleBar { order: 2 }
+.imagebox[data-title='bottom'] #imagebox-content { order: 1 }
+.imagebox[data-title='bottom'] #imagebox-titleBar { order: 2 }
 
 // ----- default theme ----- //
 
-// --- base: image-lightbox --- //
+// --- base: imagebox --- //
 
-.image-lightbox-wrapper {
+.imagebox-wrapper {
   border-radius: 3px;
   box-shadow: 0 0 20px rgba(0, 0, 0, .9);
   background-color: white;
 }
 
-.image-lightbox-content {
+.imagebox-content {
   padding: 20px 24px 30px;
 }
 
-.image-lightbox-titleBar {
+.imagebox-titleBar {
   padding: 11px 37px 11px 24px;
   border-bottom: 1px #ccc solid;
 }
 
-.image-lightbox-btn--close,
-.image-lightbox-titleBar .image-lightbox-title {
+.imagebox-btn--close,
+.imagebox-titleBar .imagebox-title {
   font-weight: bold;
   font-size: 18px;
   text-shadow: 0 -1px 1px rgba(0, 0, 0, .2);
 }
 
-.image-lightbox-btn--close {
+.imagebox-btn--close {
   transition: all .5s;
   position: absolute;
   right: 11px;
@@ -89,21 +89,21 @@
   outline: none;
 }
 
-.image-lightbox-btn--close:hover {
+.imagebox-btn--close:hover {
   color: #000;
 }
 
-.image-lightbox.is-active {
+.imagebox.is-active {
   opacity: 1;
   pointer-events: auto;
 }
 
-.image-lightbox[data-title='bottom'] #image-lightbox-content { box-shadow: 0 1px 1px rgba(0, 0, 0, .3) }
-.image-lightbox[data-title='bottom'] #image-lightbox-titleBar { box-shadow: none; border-top: 1px #ccc solid }
+.imagebox[data-title='bottom'] #imagebox-content { box-shadow: 0 1px 1px rgba(0, 0, 0, .3) }
+.imagebox[data-title='bottom'] #imagebox-titleBar { box-shadow: none; border-top: 1px #ccc solid }
 
 // --- feature: lightbox --- //
 
-.image-lightbox[data-type='lightbox'] .image-lightbox-content {
+.imagebox[data-type='lightbox'] .imagebox-content {
   padding: 7px 7px 7px;
   display: flex;
   flex-wrap: wrap;
@@ -111,7 +111,7 @@
   justify-content:center;
 }
 
-.image-lightbox[data-type='lightbox'] ul {
+.imagebox[data-type='lightbox'] ul {
   padding: 0;
   margin: 0;
   list-style: none;
@@ -122,7 +122,7 @@
   z-index: 1005;
 }
 
-.image-lightbox[data-type='lightbox'] li {
+.imagebox[data-type='lightbox'] li {
   position: absolute;
   top: 0;
   opacity: 0;
@@ -130,24 +130,24 @@
   height: inherit;
 }
 
-.image-lightbox[data-type='lightbox'] li.is-active {
+.imagebox[data-type='lightbox'] li.is-active {
   opacity: 1;
 }
 
-.image-lightbox[data-type='lightbox'] li img {
+.imagebox[data-type='lightbox'] li img {
   width: inherit;
   height: inherit;
   margin: auto;
   display: block;
 }
 
-.image-lightbox[data-type='lightbox'] .image-lightbox-titleBar {
+.imagebox[data-type='lightbox'] .imagebox-titleBar {
   padding-left: 10px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.image-lightbox[data-type='lightbox'] .image-lightbox-titleBar .image-lightbox-title {
+.imagebox[data-type='lightbox'] .imagebox-titleBar .imagebox-title {
   font-size: 12px;
   font-weight: normal;
   text-align: left;
@@ -192,25 +192,25 @@
 
 // --- loading spin --- //
 
-.image-lightbox-loading:before,
-.image-lightbox-loading:after {
+.imagebox-loading:before,
+.imagebox-loading:after {
   content: '';
   display: block;
   border-radius: 15px;
   position: absolute;
 }
 
-.image-lightbox-loading {
+.imagebox-loading {
   position: absolute;
   top: 50%;
   left: 50%;
 }
 
-.image-lightbox-loading[hidden] {
+.imagebox-loading[hidden] {
   display: none;
 }
 
-.image-lightbox-loading:before {
+.imagebox-loading:before {
   width: 32px;
   height: 32px;
   margin: -16px 0 0 -16px;
@@ -219,7 +219,7 @@
   animation: spin .3s infinite linear;
 }
 
-.image-lightbox-loading:after {
+.imagebox-loading:after {
   width: 30px;
   height: 30px;
   margin: -15px 0 0 -15px;

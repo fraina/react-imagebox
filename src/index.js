@@ -1,11 +1,11 @@
 import React, { Component, cloneElement } from 'react';
 import { merge, omit, get } from 'lodash';
 
-import { LightModal } from './lib/lightbox';
+import { ImageModal } from './lib/imagebox';
 
-export const LightboxModal = LightModal;
+export const ImageboxModal = ImageModal;
 
-export class Lightbox extends Component {
+export class Imagebox extends Component {
   constructor(props) {
     super(props);
     const defaultConfig = {
@@ -20,11 +20,11 @@ export class Lightbox extends Component {
     this.state = merge({}, defaultConfig, omit(this.props, 'children'));
   }
 
-  openLightbox(params) {
+  openImagebox(params) {
     this.setState({ show: true, index: get(params, 'index') });
   }
 
-  closeLightbox() {
+  closeImagebox() {
     this.setState({ show: false });
   }
 
@@ -34,8 +34,8 @@ export class Lightbox extends Component {
     return childrenSource.map((child, index) => {
       const childProps = {
         key: index,
-        openLightbox: this.openLightbox.bind(this),
-        closeLightbox: this.closeLightbox.bind(this),
+        openImagebox: this.openImagebox.bind(this),
+        closeImagebox: this.closeImagebox.bind(this),
         ...this.state
       }
       for (var j in this.state) {
@@ -54,13 +54,13 @@ export class Lightbox extends Component {
   }
 }
 
-export class LightboxTrigger extends Component {
+export class ImageboxTrigger extends Component {
   render() {
     const childProps = {};
     Object.keys(this.props).map((key) => {
-      if (key !== 'children' && key !== 'openLightbox' && key !== 'className') {
+      if (key !== 'children' && key !== 'openImagebox' && key !== 'className') {
         childProps[key] = this.props[key];
-      } else if (key === 'openLightbox') {
+      } else if (key === 'openImagebox') {
         childProps['onClick'] = this.props[key];
       }
     })

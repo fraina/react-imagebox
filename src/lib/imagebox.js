@@ -2,7 +2,7 @@ import React, { Component, cloneElement } from 'react';
 import { get, merge } from 'lodash';
 import classNames from 'classnames';
 
-export class LightModal extends Component {
+export class ImageModal extends Component {
   constructor(props) {
     super(props);
 
@@ -63,7 +63,7 @@ export class LightModal extends Component {
 
   onKeyDown(e) {
     if ((this.props.show) && (e.keyCode === 27)) {
-      this.props.closeLightbox();
+      this.props.closeImagebox();
     }
   }
 
@@ -234,7 +234,7 @@ export class LightModal extends Component {
 
   renderTitleBar() {
     const { className, closeText, prevText, nextText, closeButton, closeButtonClassName, currentIndex, children } = this.state;
-    const { closeLightbox } = this.props;
+    const { closeImagebox } = this.props;
 
     const isLastImage = children.length === currentIndex + 1;
     const isFirstImage = currentIndex === 0;
@@ -258,7 +258,7 @@ export class LightModal extends Component {
     }
 
     return (
-      <div className={ classNames('image-lightbox-titleBar', titleBarClass) }>
+      <div className={ classNames('imagebox-titleBar', titleBarClass) }>
         <div className="lightbox-btns">
           <button
             onClick={this.onClickPrev}
@@ -274,11 +274,11 @@ export class LightModal extends Component {
             { nextText }
           </button>
         </div>
-        <span className="image-lightbox-title" dangerouslySetInnerHTML={{ __html: !this.state.isSwitching ? text : '<br />' }}></span>
+        <span className="imagebox-title" dangerouslySetInnerHTML={{ __html: !this.state.isSwitching ? text : '<br />' }}></span>
         { closeButton &&
           <button
-            onClick={closeLightbox}
-            className={classNames('image-lightbox-btn--close', closeButtonClassName)}>
+            onClick={closeImagebox}
+            className={classNames('imagebox-btn--close', closeButtonClassName)}>
             { closeText }
           </button>
         }
@@ -328,7 +328,7 @@ export class LightModal extends Component {
     const {
       overlayOpacity,
       show,
-      closeLightbox,
+      closeImagebox,
       className
     } = this.props;
 
@@ -356,20 +356,20 @@ export class LightModal extends Component {
     }
 
     return (
-      <div className={ classNames('image-lightbox', { 'is-active': show }) }
+      <div className={ classNames('imagebox', { 'is-active': show }) }
         data-type="lightbox"
         data-title={ (titleBar.enable) ? titleBar.position : null }
         style={{ transition: this.state.transition }}>
-        <div className={classNames('image-lightbox-wrapper', className)}>
+        <div className={classNames('imagebox-wrapper', className)}>
           { titleBar.enable && this.renderTitleBar() }
-          <div className="image-lightbox-content" ref="image-lightbox-content" style={contentStyle} onClick={this.onClickContent}>
-            <span className="image-lightbox-loading" hidden={!this.state.isSwitching}></span>
+          <div className="imagebox-content" ref="imagebox-content" style={contentStyle} onClick={this.onClickContent}>
+            <span className="imagebox-loading" hidden={!this.state.isSwitching}></span>
             <ul>
               {this.renderChildren()}
             </ul>
           </div>
         </div>
-        <div className="image-lightbox-overlay" style={{ opacity: overlayOpacity }} onClick={ closeLightbox } />
+        <div className="imagebox-overlay" style={{ opacity: overlayOpacity }} onClick={ closeImagebox } />
       </div>
     );
   }

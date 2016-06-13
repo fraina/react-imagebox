@@ -25,12 +25,12 @@ export class ImageModal extends Component {
 
       loop: true,
       clickSwitch: true,
-      compatible: true,
+      compatible: false,
 
       maxHeight: 800,
       maxWidth: 1000,
-      minHeight: false,
-      minWidth: false,
+      minHeight: 0,
+      minWidth: 0,
       initWidth: 200,
       initHeight: 200
     }

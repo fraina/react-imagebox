@@ -98,12 +98,12 @@ var ImageModal = function (_Component) {
 
       loop: true,
       clickSwitch: true,
-      compatible: true,
+      compatible: false,
 
       maxHeight: 800,
       maxWidth: 1000,
-      minHeight: false,
-      minWidth: false,
+      minHeight: 0,
+      minWidth: 0,
       initWidth: 200,
       initHeight: 200
     };
@@ -384,7 +384,7 @@ var ImageModal = function (_Component) {
       var isLastImage = children.length === currentIndex + 1;
       var isFirstImage = currentIndex === 0;
 
-      var customTitle = currentIndex && children[currentIndex].props['data-title'];
+      var customTitle = currentIndex !== undefined && children[currentIndex].props['data-title'];
       var text = customTitle ? customTitle : '';
       if (currentIndex !== null && customTitle) {
         var links = customTitle.match(/\{\{([^}]+|\}[^}]+)*\}\}/g);

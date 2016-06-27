@@ -239,7 +239,7 @@ export class ImageModal extends Component {
     const isLastImage = children.length === currentIndex + 1;
     const isFirstImage = currentIndex === 0;
 
-    const customTitle = currentIndex && children[currentIndex].props['data-title'];
+    const customTitle = currentIndex !== undefined && children[currentIndex].props['data-title'];
     var text = customTitle ? customTitle : '';
     if (currentIndex !== null && customTitle) {
       const links = customTitle.match(/\{\{([^}]+|\}[^}]+)*\}\}/g);

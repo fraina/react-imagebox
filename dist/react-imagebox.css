@@ -10,7 +10,7 @@
   opacity: 0;
   pointer-events: none;
   z-index: 1000;
-};
+}
 
 .imagebox[hidden]{
   display: none;
@@ -52,9 +52,9 @@
 .imagebox[data-title='bottom'] #imagebox-content { order: 1 }
 .imagebox[data-title='bottom'] #imagebox-titleBar { order: 2 }
 
-// ----- default theme ----- //
+/* ----- default theme ----- */
 
-// --- base: imagebox --- //
+/* --- base: imagebox --- */
 
 .imagebox-wrapper {
   border-radius: 3px;
@@ -101,7 +101,7 @@
 .imagebox[data-title='bottom'] #imagebox-content { box-shadow: 0 1px 1px rgba(0, 0, 0, .3) }
 .imagebox[data-title='bottom'] #imagebox-titleBar { box-shadow: none; border-top: 1px #ccc solid }
 
-// --- feature: lightbox --- //
+/* --- feature: lightbox --- */
 
 .imagebox[data-type='lightbox'] .imagebox-content {
   padding: 7px 7px 7px;
@@ -190,7 +190,7 @@
   color: #424242;
 }
 
-// --- loading spin --- //
+/* --- loading spin --- */
 
 .imagebox-loading:before,
 .imagebox-loading:after {

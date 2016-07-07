@@ -1,6 +1,6 @@
 {
   "name": "react-imagebox",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A simple image lightbox component for react",
   "main": "dist/react-imagebox.js",
   "repository": {

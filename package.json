@@ -3,6 +3,7 @@
   "version": "0.0.3",
   "description": "A simple image lightbox component for react",
   "main": "dist/react-imagebox.js",
+  "typings": "dist/react-imagebox.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Fraina/react-imagebox.git"

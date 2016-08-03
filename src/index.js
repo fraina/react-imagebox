@@ -2,8 +2,10 @@ import React, { Component, cloneElement } from 'react';
 import { merge, omit, get } from 'lodash';
 
 import { ImageModal } from './lib/imagebox';
+import { Panel } from './lib/panel';
 
 export const ImageboxModal = ImageModal;
+export const ImageboxPanel = Panel;
 
 export class Imagebox extends Component {
   constructor(props) {
@@ -18,6 +20,10 @@ export class Imagebox extends Component {
     }
 
     this.state = merge({}, defaultConfig, omit(this.props, 'children'));
+  }
+
+  componentWillReceiveProps(nextProps) {
+    this.state = merge({}, this.state, omit(nextProps, 'children'));
   }
 
   openImagebox(params) {
@@ -38,9 +44,6 @@ export class Imagebox extends Component {
         closeImagebox: this.closeImagebox.bind(this),
         ...this.state
       }
-      for (var j in this.state) {
-        childProps[j] = this.state[j];
-      }
       return cloneElement(child, childProps);
     })
   }
@@ -56,14 +59,9 @@ export class Imagebox extends Component {
 
 export class ImageboxTrigger extends Component {
   render() {
+    const { children, openImagebox } = this.props;
     const childProps = {};
-    Object.keys(this.props).map((key) => {
-      if (key !== 'children' && key !== 'openImagebox' && key !== 'className') {
-        childProps[key] = this.props[key];
-      } else if (key === 'openImagebox') {
-        childProps['onClick'] = this.props[key];
-      }
-    })
-    return cloneElement(this.props.children, childProps);
+    childProps['onClick'] = openImagebox;
+    return cloneElement(children, childProps);
   }
 }

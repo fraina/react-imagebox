@@ -13,6 +13,7 @@ export class ImageModal extends Component {
       position: 'top',
       prevText: '﹤',
       nextText: '﹥',
+      currentIndex: 1,
 
       isSwitching: true
     };
@@ -40,16 +41,9 @@ export class ImageModal extends Component {
     this._timeoutQueue = [];
     this._lightboxConfig = merge({}, defaultLightboxConfig, this.props.lightbox);
 
-    const children = this.props.children.props.children;
-    const childrenNodeList = children.length ? children : [ children ];
-    const childrenWithProps = childrenNodeList.map((children, index) => {
-      if (children.props['data-default']) { this._initIndex =  index}
-      return cloneElement(children);
-    });
 
     this.state = merge({}, defaultTitlebarConfig, this.props.titleBar, {
       callback: {},
-      children: childrenWithProps,
       currentWidth: get(this._lightboxConfig, 'initWidth'),
       currentHeight: get(this._lightboxConfig, 'initHeight'),
       lightboxConfig: this._lightboxConfig
@@ -147,14 +141,16 @@ export class ImageModal extends Component {
   }
 
   onClickPrev() {
-    const { children, currentIndex } = this.state;
+    const { currentIndex } = this.state;
+    const { children } = this.props;
     const isFirstImage = currentIndex === 0;
     const newIndex = (isFirstImage) ? children.length - 1 : currentIndex - 1;
     this.onChangeIndex(newIndex);
   }
 
   onClickNext() {
-    const { children, currentIndex } = this.state;
+    const { currentIndex } = this.state;
+    const { children } = this.props;
     const isLastImage = children.length === currentIndex + 1;
     const newIndex = (isLastImage) ? 0 : currentIndex + 1;
     this.onChangeIndex(newIndex);
@@ -185,9 +181,9 @@ export class ImageModal extends Component {
 
   getCurrentSize(index = this._initIndex) {
     const { maxHeight, maxWidth, compatible } = this.state.lightboxConfig;
-    const currentChildren = this.refs[`order-${index}`].children[0];
-    const imgWidth = currentChildren.naturalWidth || currentChildren.offsetWidth;
-    const imgHeight = currentChildren.naturalHeight || currentChildren.offsetHeight;
+    const currentChildren = this.refs[`order-${index}`];
+    const imgWidth = currentChildren.getSize().width;
+    const imgHeight = currentChildren.getSize().height;
     const clientWidth = document.body.clientWidth - 18;
     const clientHeight = document.body.clientHeight - 68;
 
@@ -219,7 +215,8 @@ export class ImageModal extends Component {
   }
 
   onClickContent() {
-    const { currentIndex, children, lightboxConfig: { clickSwitch, loop } } = this.state;
+    const { currentIndex, lightboxConfig: { clickSwitch, loop } } = this.state;
+    const { children } = this.props;
     const isLastImage = children.length === currentIndex + 1;
     if (!clickSwitch || (!loop && isLastImage)) return;
     this.onClickNext();
@@ -233,14 +230,15 @@ export class ImageModal extends Component {
   }
 
   renderTitleBar() {
-    const { className, closeText, prevText, nextText, closeButton, closeButtonClassName, currentIndex, children } = this.state;
+    const { className, closeText, prevText, nextText, closeButton, closeButtonClassName, currentIndex } = this.state;
+    const { children } = this.props;
     const { closeImagebox } = this.props;
 
     const isLastImage = children.length === currentIndex + 1;
     const isFirstImage = currentIndex === 0;
 
-    const customTitle = currentIndex !== undefined && children[currentIndex].props['data-title'];
-    var text = customTitle ? customTitle : '';
+    const customTitle = currentIndex !== undefined && children[currentIndex].props['title'];
+    var text = customTitle || '';
     if (currentIndex !== null && customTitle) {
       const links = customTitle.match(/\{\{([^}]+|\}[^}]+)*\}\}/g);
       if (links) {
@@ -296,31 +294,22 @@ export class ImageModal extends Component {
   }
 
   renderChildren() {
+    const { children, show } = this.props;
     const { fadeMode, fadeSpeed } = this.state.lightboxConfig;
-    const style = { 'transition': fadeMode ? `all ${fadeSpeed / 1000}s` : 'none' };
-    return this.state.children.map((children, index) => {
+    const childrenSource = (children.length > 1) ? children : new Array(children);
+    return childrenSource.map((child, index) => {
       const isCurrentIndex = index === this.state.currentIndex && !this.state.isSwitching;
-      if (children.props.children.type === 'img') {
-        var imgProps = {
-          src: !this._init ? null : children.props.children.props['data-src'] || children.props.children.props['src'],
-          onLoad: index === this.state.currentIndex ? this.handleImageLoaded.bind(this) : null
-        }
-        return (
-          <li key={index} ref={`order-${index}`}
-            style={style}
-            className={classNames({ 'is-active': isCurrentIndex && this.props.show })}>
-            <img { ...imgProps } />
-          </li>
-        )
-      } else {
-        return cloneElement(children, {
-          key: index,
-          ref: `order-${index}`,
-          style: style,
-          className: isCurrentIndex ? 'is-active' : ''
-        });
+      const childProps = {
+        key: index,
+        ref: `order-${index}`,
+        isCurrentIndex,
+        show,
+        fadeMode,
+        fadeSpeed,
+        handleImageLoaded: this.handleImageLoaded
       }
-    });
+      return cloneElement(child, childProps);
+    })
   }
 
   render() {

@@ -1,10 +1,38 @@
 import React, { Component, cloneElement } from 'react';
-import { get, merge } from 'lodash';
+import { get, merge, omit, clone } from 'lodash';
 import classNames from 'classnames';
+import Manager from './manager';
 
-export class ImageModal extends Component {
+export class Container extends Component {
   constructor(props) {
     super(props);
+
+    this._haveInit = false;
+    this._timeoutQueue = [];
+
+
+    this._defaultState = this.getConfig();
+    this.state = this._defaultState;
+
+    this.onClickPrev = this.onClickPrev.bind(this);
+    this.onClickNext = this.onClickNext.bind(this);
+    this.onClickContent = this.onClickContent.bind(this);
+    this.handleImageLoaded = this.handleImageLoaded.bind(this);
+    this.handleStoreChange = this.handleStoreChange.bind(this);
+
+    this.closeImagebox = Manager.close.bind(Manager);
+  }
+
+  getConfig(params = this.props) {
+    if (!params) return {}
+    const defaultConfig = {
+      overlayOpacity: 0.75,
+      show: false,
+      fadeIn: false,
+      fadeInSpeed: 500,
+      fadeOut: true,
+      fadeOutSpeed: 500
+    }
 
     const defaultTitlebarConfig = {
       enable: true,
@@ -13,7 +41,7 @@ export class ImageModal extends Component {
       position: 'top',
       prevText: '﹤',
       nextText: '﹥',
-      currentIndex: 1,
+      currentIndex: 0,
 
       isSwitching: true
     };
@@ -26,7 +54,7 @@ export class ImageModal extends Component {
 
       loop: true,
       clickSwitch: true,
-      compatible: false,
+      compatible: true,
 
       maxHeight: 800,
       maxWidth: 1000,
@@ -36,29 +64,57 @@ export class ImageModal extends Component {
       initHeight: 200
     }
 
-    this._init = false;
-    this._initIndex = 0;
-    this._timeoutQueue = [];
-    this._lightboxConfig = merge({}, defaultLightboxConfig, this.props.lightbox);
-
-
-    this.state = merge({}, defaultTitlebarConfig, this.props.titleBar, {
+    const _config = merge({}, defaultConfig, omit(params, [ 'children', 'lightbox' ]))
+    this._lightboxConfig = merge({}, defaultLightboxConfig, params.lightbox);
+    return merge({}, _config, defaultTitlebarConfig, params.titleBar, {
+      children: null,
       callback: {},
       currentWidth: get(this._lightboxConfig, 'initWidth'),
       currentHeight: get(this._lightboxConfig, 'initHeight'),
       lightboxConfig: this._lightboxConfig
     });
-
-    this.onClickPrev = this.onClickPrev.bind(this);
-    this.onClickNext = this.onClickNext.bind(this);
-    this.onClickContent = this.onClickContent.bind(this);
-    this.handleImageLoaded = this.handleImageLoaded.bind(this);
   }
 
   onKeyDown(e) {
-    if ((this.props.show) && (e.keyCode === 27)) {
-      this.props.closeImagebox();
+    if ((this.state.show) && (e.keyCode === 27)) {
+      this.closeImagebox();
     }
+  }
+
+  handleStoreChange(params) {
+    const { children, index, show, config } = params;
+
+    if (this.state.show !== show) {
+      this.cleanUp();
+
+      const { fadeIn, fadeOut, fadeInSpeed, fadeOutSpeed } = this.state;
+      if (show) {
+        const { onComplete } = this.props;
+        this.setState(merge({}, this.getConfig(config), {
+          children: children,
+          show: true,
+          transition: (fadeIn) ? `all ${(fadeInSpeed / 1000)}s ease-in-out` : 'none',
+          callback: setTimeout(() => {
+            onComplete && onComplete();
+          }, fadeInSpeed + 1)
+        }));
+        setTimeout(() => {this.onOpen(index)}, 0)
+      } else {
+        const { onCleanUp } = this.props;
+        onCleanUp && onCleanUp();
+        this.setState({
+          show: false,
+          transition: (fadeOut) ? `all ${fadeOutSpeed / 1000}s ease-in-out` : 'none',
+          callback: setTimeout(() => {
+            this.onClosed();
+          }, fadeOutSpeed + 1)
+        })
+      }
+    }
+  }
+
+  componentWillMount() {
+    Manager.addChangeListener(this.handleStoreChange);
   }
 
   componentDidMount() {
@@ -67,49 +123,26 @@ export class ImageModal extends Component {
 
   componentWillUnmount() {
     document.removeEventListener('keydown', this.onKeyDown.bind(this));
+    Manager.removeChangeListener(this.handleStoreChange);
   }
 
   componentWillReceiveProps(nextProps) {
-    if (this.props.show !== nextProps.show) {
-      this.cleanUp();
-      this._initIndex = get(nextProps, 'index', this._initIndex);
-
-      const { fadeIn, fadeOut } = nextProps;
-      if (nextProps.show) {
-        const { onComplete } = this.props;
-        this.onOpen();
-        this.setState({
-          transition: (fadeIn) ? `all ${get(nextProps, 'fadeInSpeed', 1000) / 1000}s ease-in-out` : 'none',
-          callback: setTimeout(() => {
-            onComplete && onComplete();
-          }, get(nextProps, 'fadeInSpeed', 0) + 1)
-        });
-      } else {
-        const { onCleanUp } = this.props;
-        onCleanUp && onCleanUp();
-        this.setState({
-          transition: (fadeOut) ? `all ${get(nextProps, 'fadeOutSpeed', 1000) / 1000}s ease-in-out` : 'none',
-          callback: setTimeout(() => {
-            this.onClosed();
-          }, get(nextProps, 'fadeOutSpeed', 0) + 1)
-        })
-      }
-    }
+    this.state = merge({}, this.state, omit(nextProps, 'children'));
   }
 
-  onOpen() {
-    this._init = true;
+  onOpen(index) {
+    this._haveInit = true;
     this.cleanUp();
     const { onOpen } = this.props;
-    const { currentWidth, currentHeight } = this.getCurrentSize(this._initIndex);
     onOpen && onOpen();
 
     const trasitionSpeed = this.state.lightboxConfig.speed || 0;
+    const { currentWidth, currentHeight } = this.getCurrentSize(index);
     this.setState({
       isSwitching: true,
+      currentIndex: index,
       currentWidth: currentWidth,
       currentHeight: currentHeight,
-      currentIndex: this._initIndex,
       lightboxConfig: merge({}, this.state.lightboxConfig, {
         smoothResize: this._lightboxConfig.smoothResize
       })
@@ -133,16 +166,14 @@ export class ImageModal extends Component {
   onClosed() {
     const { onClosed } = this.props;
     onClosed && onClosed();
-    this.setState({
-      lightboxConfig: merge({}, this.state.lightboxConfig, { smoothResize: false }),
-      currentWidth: this.state.lightboxConfig.initWidth,
-      currentHeight: this.state.lightboxConfig.initHeight
-    })
+    this.setState(merge({}, this._defaultState, {
+      lightboxConfig: merge({}, this.state.lightboxConfig, { smoothResize: false })
+    }))
   }
 
   onClickPrev() {
     const { currentIndex } = this.state;
-    const { children } = this.props;
+    const children = get(this.state, 'children.props.children');
     const isFirstImage = currentIndex === 0;
     const newIndex = (isFirstImage) ? children.length - 1 : currentIndex - 1;
     this.onChangeIndex(newIndex);
@@ -150,7 +181,7 @@ export class ImageModal extends Component {
 
   onClickNext() {
     const { currentIndex } = this.state;
-    const { children } = this.props;
+    const children = get(this.state, 'children.props.children');
     const isLastImage = children.length === currentIndex + 1;
     const newIndex = (isLastImage) ? 0 : currentIndex + 1;
     this.onChangeIndex(newIndex);
@@ -179,11 +210,12 @@ export class ImageModal extends Component {
 
   }
 
-  getCurrentSize(index = this._initIndex) {
+  getCurrentSize(index = this.state.currentIndex) {
+    if (!this.refs.modal) return { currentWidth: this.state.lightboxConfig.initWidth, currentHeight: this.state.lightboxConfig.initHeight }
+
     const { maxHeight, maxWidth, compatible } = this.state.lightboxConfig;
-    const currentChildren = this.refs[`order-${index}`];
-    const imgWidth = currentChildren.getSize().width;
-    const imgHeight = currentChildren.getSize().height;
+    const currentChildren = this.refs.modal.getPanel(index);
+    const { width: imgWidth, height: imgHeight } = currentChildren.size();
     const clientWidth = document.body.clientWidth - 18;
     const clientHeight = document.body.clientHeight - 68;
 
@@ -216,7 +248,7 @@ export class ImageModal extends Component {
 
   onClickContent() {
     const { currentIndex, lightboxConfig: { clickSwitch, loop } } = this.state;
-    const { children } = this.props;
+    const children = get(this.state, 'children.props.children');
     const isLastImage = children.length === currentIndex + 1;
     if (!clickSwitch || (!loop && isLastImage)) return;
     this.onClickNext();
@@ -231,13 +263,13 @@ export class ImageModal extends Component {
 
   renderTitleBar() {
     const { className, closeText, prevText, nextText, closeButton, closeButtonClassName, currentIndex } = this.state;
-    const { children } = this.props;
-    const { closeImagebox } = this.props;
+    const children = get(this.state, 'children.props.children', []);
 
     const isLastImage = children.length === currentIndex + 1;
     const isFirstImage = currentIndex === 0;
 
-    const customTitle = currentIndex !== undefined && children[currentIndex].props['title'];
+
+    const customTitle = this.refs.modal && this.refs.modal.getPanel(currentIndex).title();
     var text = customTitle || '';
     if (currentIndex !== null && customTitle) {
       const links = customTitle.match(/\{\{([^}]+|\}[^}]+)*\}\}/g);
@@ -275,7 +307,7 @@ export class ImageModal extends Component {
         <span className="imagebox-title" dangerouslySetInnerHTML={{ __html: !this.state.isSwitching ? text : '<br />' }}></span>
         { closeButton &&
           <button
-            onClick={closeImagebox}
+            onClick={this.closeImagebox}
             className={classNames('imagebox-btn--close', closeButtonClassName)}>
             { closeText }
           </button>
@@ -285,7 +317,7 @@ export class ImageModal extends Component {
   }
 
   handleImageLoaded() {
-    if (!this._init) return;
+    if (!this._haveInit) return;
     const { currentWidth, currentHeight } = this.getCurrentSize(this.state.currentIndex);
     this.setState({
       currentWidth: currentWidth,
@@ -294,22 +326,21 @@ export class ImageModal extends Component {
   }
 
   renderChildren() {
-    const { children, show } = this.props;
+    const { children } = this.state;
+    if (children === null) return <div></div>
+
     const { fadeMode, fadeSpeed } = this.state.lightboxConfig;
-    const childrenSource = (children.length > 1) ? children : new Array(children);
-    return childrenSource.map((child, index) => {
-      const isCurrentIndex = index === this.state.currentIndex && !this.state.isSwitching;
-      const childProps = {
-        key: index,
-        ref: `order-${index}`,
-        isCurrentIndex,
-        show,
-        fadeMode,
-        fadeSpeed,
-        handleImageLoaded: this.handleImageLoaded
-      }
-      return cloneElement(child, childProps);
-    })
+    const childProps = {
+      show: this.state.show,
+      fadeMode,
+      fadeSpeed,
+      ref: 'modal',
+      currentIndex: this.state.currentIndex,
+      handleImageLoaded: this.handleImageLoaded,
+      haveInit: this._haveInit,
+      isSwitching: this.state.isSwitching
+    }
+    return cloneElement(children, childProps);
   }
 
   render() {
@@ -317,9 +348,8 @@ export class ImageModal extends Component {
     const {
       overlayOpacity,
       show,
-      closeImagebox,
       className
-    } = this.props;
+    } = this.state;
 
     const {
       currentWidth,
@@ -353,12 +383,10 @@ export class ImageModal extends Component {
           { titleBar.enable && this.renderTitleBar() }
           <div className="imagebox-content" ref="imagebox-content" style={contentStyle} onClick={this.onClickContent}>
             <span className="imagebox-loading" hidden={!this.state.isSwitching}></span>
-            <ul>
-              {this.renderChildren()}
-            </ul>
+            {this.renderChildren()}
           </div>
         </div>
-        <div className="imagebox-overlay" style={{ opacity: overlayOpacity }} onClick={ closeImagebox } />
+        <div className="imagebox-overlay" style={{ opacity: overlayOpacity }} onClick={ this.closeImagebox } />
       </div>
     );
   }

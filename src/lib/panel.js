@@ -1,22 +1,33 @@
 import React, { Component, cloneElement } from 'react';
 import { findDOMNode } from 'react-dom';
+import { get } from 'lodash';
 import classNames from 'classnames';
 
 export class Panel extends Component {
-  getSize() {
+  size() {
     const node = findDOMNode(this.refs.content);
     const width = node.naturalWidth || node.offsetWidth;
     const height = node.naturalHeight || node.offsetHeight;
     return { width, height }
   }
 
+  title() {
+    return this.props.title;
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.isCurrentIndex && this.props.isCurrentIndex !== nextProps.isCurrentIndex) {
+      this.props.handleImageLoaded()
+    }
+  }
+
   renderChildren() {
-    const { isCurrentIndex, children } = this.props;
+    const { children, show, haveInit } = this.props;
     if (children.type === 'img') {
+      const isLazyLoad = get(children.props, 'data-src', false);
       var imgProps = {
-        src: children.props['data-src'] || children.props['src'],
-        ref: 'content',
-        onLoad: isCurrentIndex ? this.props.handleImageLoaded : null
+        src: (isLazyLoad && show) || haveInit ? children.props['data-src'] : children.props['src'],
+        ref: 'content'
       }
       return (
         <img { ...imgProps } />

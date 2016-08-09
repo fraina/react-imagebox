@@ -8,6 +8,8 @@ var React = require('react');
 var React__default = _interopDefault(React);
 var lodash = require('lodash');
 var classNames = _interopDefault(require('classnames'));
+var events = require('events');
+var reactDom = require('react-dom');
 
 var classCallCheck = function (instance, Constructor) {
   if (!(instance instanceof Constructor)) {
@@ -33,20 +35,6 @@ var createClass = function () {
   };
 }();
 
-var _extends = Object.assign || function (target) {
-  for (var i = 1; i < arguments.length; i++) {
-    var source = arguments[i];
-
-    for (var key in source) {
-      if (Object.prototype.hasOwnProperty.call(source, key)) {
-        target[key] = source[key];
-      }
-    }
-  }
-
-  return target;
-};
-
 var inherits = function (subClass, superClass) {
   if (typeof superClass !== "function" && superClass !== null) {
     throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
@@ -63,6 +51,18 @@ var inherits = function (subClass, superClass) {
   if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
 };
 
+var objectWithoutProperties = function (obj, keys) {
+  var target = {};
+
+  for (var i in obj) {
+    if (keys.indexOf(i) >= 0) continue;
+    if (!Object.prototype.hasOwnProperty.call(obj, i)) continue;
+    target[i] = obj[i];
+  }
+
+  return target;
+};
+
 var possibleConstructorReturn = function (self, call) {
   if (!self) {
     throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
@@ -71,78 +71,212 @@ var possibleConstructorReturn = function (self, call) {
   return call && (typeof call === "object" || typeof call === "function") ? call : self;
 };
 
-var ImageModal = function (_Component) {
-  inherits(ImageModal, _Component);
+var Constants = {
+  OPEN: 'open',
+  CLOSE: 'close',
+  CHANGE: 'change'
+};
 
-  function ImageModal(props) {
-    classCallCheck(this, ImageModal);
+var Manager = function (_EventEmitter) {
+  inherits(Manager, _EventEmitter);
 
-    var _this = possibleConstructorReturn(this, Object.getPrototypeOf(ImageModal).call(this, props));
+  function Manager() {
+    classCallCheck(this, Manager);
 
-    var defaultTitlebarConfig = {
-      enable: true,
-      closeButton: true,
-      closeText: '✕',
-      position: 'top',
-      prevText: '﹤',
-      nextText: '﹥',
+    var _this = possibleConstructorReturn(this, Object.getPrototypeOf(Manager).call(this));
 
-      isSwitching: true
-    };
+    _this.content = null;
+    _this.config = null;
+    _this.index = 0;
+    _this.show = false;
+    return _this;
+  }
 
-    var defaultLightboxConfig = {
-      speed: 500,
-      smoothResize: true,
-      fadeMode: true,
-      fadeSpeed: 300,
+  createClass(Manager, [{
+    key: 'open',
+    value: function open(params) {
+      var content = params.content;
+      var config = params.config;
+      var index = params.index;
 
-      loop: true,
-      clickSwitch: true,
-      compatible: false,
+      this.content = content || null;
+      this.config = config || {};
+      this.index = index || 0;
+      this.show = true;
+      this.emitChange();
+    }
+  }, {
+    key: 'close',
+    value: function close() {
+      this.show = false;
+      this.emitChange();
+    }
+  }, {
+    key: 'emitChange',
+    value: function emitChange() {
+      this.emit(Constants.CHANGE, {
+        children: this.content,
+        config: this.config,
+        index: this.index,
+        show: this.show
+      });
+    }
+  }, {
+    key: 'addChangeListener',
+    value: function addChangeListener(callback) {
+      this.addListener(Constants.CHANGE, callback);
+    }
+  }, {
+    key: 'removeChangeListener',
+    value: function removeChangeListener(callback) {
+      this.removeListener(Constants.CHANGE, callback);
+    }
+  }]);
+  return Manager;
+}(events.EventEmitter);
 
-      maxHeight: 800,
-      maxWidth: 1000,
-      minHeight: 0,
-      minWidth: 0,
-      initWidth: 200,
-      initHeight: 200
-    };
+var Manager$1 = new Manager();
 
-    _this._init = false;
-    _this._initIndex = 0;
+var Container = function (_Component) {
+  inherits(Container, _Component);
+
+  function Container(props) {
+    classCallCheck(this, Container);
+
+    var _this = possibleConstructorReturn(this, Object.getPrototypeOf(Container).call(this, props));
+
+    _this._haveInit = false;
     _this._timeoutQueue = [];
-    _this._lightboxConfig = lodash.merge({}, defaultLightboxConfig, _this.props.lightbox);
 
-    var children = _this.props.children.props.children;
-    var childrenNodeList = children.length ? children : [children];
-    var childrenWithProps = childrenNodeList.map(function (children, index) {
-      if (children.props['data-default']) {
-        _this._initIndex = index;
-      }
-      return React.cloneElement(children);
-    });
-
-    _this.state = lodash.merge({}, defaultTitlebarConfig, _this.props.titleBar, {
-      callback: {},
-      children: childrenWithProps,
-      currentWidth: lodash.get(_this._lightboxConfig, 'initWidth'),
-      currentHeight: lodash.get(_this._lightboxConfig, 'initHeight'),
-      lightboxConfig: _this._lightboxConfig
-    });
+    _this._defaultState = _this.getConfig();
+    _this.state = _this._defaultState;
 
     _this.onClickPrev = _this.onClickPrev.bind(_this);
     _this.onClickNext = _this.onClickNext.bind(_this);
     _this.onClickContent = _this.onClickContent.bind(_this);
     _this.handleImageLoaded = _this.handleImageLoaded.bind(_this);
+    _this.handleStoreChange = _this.handleStoreChange.bind(_this);
+
+    _this.closeImagebox = Manager$1.close.bind(Manager$1);
     return _this;
   }
 
-  createClass(ImageModal, [{
+  createClass(Container, [{
+    key: 'getConfig',
+    value: function getConfig() {
+      var params = arguments.length <= 0 || arguments[0] === undefined ? this.props : arguments[0];
+
+      if (!params) return {};
+      var defaultConfig = {
+        overlayOpacity: 0.75,
+        show: false,
+        fadeIn: false,
+        fadeInSpeed: 500,
+        fadeOut: true,
+        fadeOutSpeed: 500
+      };
+
+      var defaultTitlebarConfig = {
+        enable: true,
+        closeButton: true,
+        closeText: '✕',
+        position: 'top',
+        prevText: '﹤',
+        nextText: '﹥',
+        currentIndex: 0,
+
+        isSwitching: true
+      };
+
+      var defaultLightboxConfig = {
+        speed: 500,
+        smoothResize: true,
+        fadeMode: true,
+        fadeSpeed: 300,
+
+        loop: true,
+        clickSwitch: true,
+        compatible: true,
+
+        maxHeight: 800,
+        maxWidth: 1000,
+        minHeight: 0,
+        minWidth: 0,
+        initWidth: 200,
+        initHeight: 200
+      };
+
+      var _config = lodash.merge({}, defaultConfig, lodash.omit(params, ['children', 'lightbox']));
+      this._lightboxConfig = lodash.merge({}, defaultLightboxConfig, params.lightbox);
+      return lodash.merge({}, _config, defaultTitlebarConfig, params.titleBar, {
+        children: null,
+        callback: {},
+        currentWidth: lodash.get(this._lightboxConfig, 'initWidth'),
+        currentHeight: lodash.get(this._lightboxConfig, 'initHeight'),
+        lightboxConfig: this._lightboxConfig
+      });
+    }
+  }, {
     key: 'onKeyDown',
     value: function onKeyDown(e) {
-      if (this.props.show && e.keyCode === 27) {
-        this.props.closeImagebox();
+      if (this.state.show && e.keyCode === 27) {
+        this.closeImagebox();
       }
+    }
+  }, {
+    key: 'handleStoreChange',
+    value: function handleStoreChange(params) {
+      var _this2 = this;
+
+      var children = params.children;
+      var index = params.index;
+      var show = params.show;
+      var config = params.config;
+
+
+      if (this.state.show !== show) {
+        this.cleanUp();
+
+        var _state = this.state;
+        var fadeIn = _state.fadeIn;
+        var fadeOut = _state.fadeOut;
+        var fadeInSpeed = _state.fadeInSpeed;
+        var fadeOutSpeed = _state.fadeOutSpeed;
+
+        if (show) {
+          (function () {
+            var onComplete = _this2.props.onComplete;
+
+            _this2.setState(lodash.merge({}, _this2.getConfig(config), {
+              children: children,
+              show: true,
+              transition: fadeIn ? 'all ' + fadeInSpeed / 1000 + 's ease-in-out' : 'none',
+              callback: setTimeout(function () {
+                onComplete && onComplete();
+              }, fadeInSpeed + 1)
+            }));
+            setTimeout(function () {
+              _this2.onOpen(index);
+            }, 0);
+          })();
+        } else {
+          var onCleanUp = this.props.onCleanUp;
+
+          onCleanUp && onCleanUp();
+          this.setState({
+            show: false,
+            transition: fadeOut ? 'all ' + fadeOutSpeed / 1000 + 's ease-in-out' : 'none',
+            callback: setTimeout(function () {
+              _this2.onClosed();
+            }, fadeOutSpeed + 1)
+          });
+        }
+      }
+    }
+  }, {
+    key: 'componentWillMount',
+    value: function componentWillMount() {
+      Manager$1.addChangeListener(this.handleStoreChange);
     }
   }, {
     key: 'componentDidMount',
@@ -153,66 +287,36 @@ var ImageModal = function (_Component) {
     key: 'componentWillUnmount',
     value: function componentWillUnmount() {
       document.removeEventListener('keydown', this.onKeyDown.bind(this));
+      Manager$1.removeChangeListener(this.handleStoreChange);
     }
   }, {
     key: 'componentWillReceiveProps',
     value: function componentWillReceiveProps(nextProps) {
-      var _this2 = this;
-
-      if (this.props.show !== nextProps.show) {
-        this.cleanUp();
-        this._initIndex = lodash.get(nextProps, 'index', this._initIndex);
-
-        var fadeIn = nextProps.fadeIn;
-        var fadeOut = nextProps.fadeOut;
-
-        if (nextProps.show) {
-          (function () {
-            var onComplete = _this2.props.onComplete;
-
-            _this2.onOpen();
-            _this2.setState({
-              transition: fadeIn ? 'all ' + lodash.get(nextProps, 'fadeInSpeed', 1000) / 1000 + 's ease-in-out' : 'none',
-              callback: setTimeout(function () {
-                onComplete && onComplete();
-              }, lodash.get(nextProps, 'fadeInSpeed', 0) + 1)
-            });
-          })();
-        } else {
-          var onCleanUp = this.props.onCleanUp;
-
-          onCleanUp && onCleanUp();
-          this.setState({
-            transition: fadeOut ? 'all ' + lodash.get(nextProps, 'fadeOutSpeed', 1000) / 1000 + 's ease-in-out' : 'none',
-            callback: setTimeout(function () {
-              _this2.onClosed();
-            }, lodash.get(nextProps, 'fadeOutSpeed', 0) + 1)
-          });
-        }
-      }
+      this.state = lodash.merge({}, this.state, lodash.omit(nextProps, 'children'));
     }
   }, {
     key: 'onOpen',
-    value: function onOpen() {
+    value: function onOpen(index) {
       var _this3 = this;
 
-      this._init = true;
+      this._haveInit = true;
       this.cleanUp();
       var onOpen = this.props.onOpen;
-
-      var _getCurrentSize = this.getCurrentSize(this._initIndex);
-
-      var currentWidth = _getCurrentSize.currentWidth;
-      var currentHeight = _getCurrentSize.currentHeight;
 
       onOpen && onOpen();
 
       var trasitionSpeed = this.state.lightboxConfig.speed || 0;
+
+      var _getCurrentSize = this.getCurrentSize(index);
+
+      var currentWidth = _getCurrentSize.currentWidth;
+      var currentHeight = _getCurrentSize.currentHeight;
+
       this.setState({
         isSwitching: true,
+        currentIndex: index,
         currentWidth: currentWidth,
         currentHeight: currentHeight,
-        currentIndex: this._initIndex,
         lightboxConfig: lodash.merge({}, this.state.lightboxConfig, {
           smoothResize: this._lightboxConfig.smoothResize
         })
@@ -242,19 +346,16 @@ var ImageModal = function (_Component) {
       var onClosed = this.props.onClosed;
 
       onClosed && onClosed();
-      this.setState({
-        lightboxConfig: lodash.merge({}, this.state.lightboxConfig, { smoothResize: false }),
-        currentWidth: this.state.lightboxConfig.initWidth,
-        currentHeight: this.state.lightboxConfig.initHeight
-      });
+      this.setState(lodash.merge({}, this._defaultState, {
+        lightboxConfig: lodash.merge({}, this.state.lightboxConfig, { smoothResize: false })
+      }));
     }
   }, {
     key: 'onClickPrev',
     value: function onClickPrev() {
-      var _state = this.state;
-      var children = _state.children;
-      var currentIndex = _state.currentIndex;
+      var currentIndex = this.state.currentIndex;
 
+      var children = lodash.get(this.state, 'children.props.children');
       var isFirstImage = currentIndex === 0;
       var newIndex = isFirstImage ? children.length - 1 : currentIndex - 1;
       this.onChangeIndex(newIndex);
@@ -262,10 +363,9 @@ var ImageModal = function (_Component) {
   }, {
     key: 'onClickNext',
     value: function onClickNext() {
-      var _state2 = this.state;
-      var children = _state2.children;
-      var currentIndex = _state2.currentIndex;
+      var currentIndex = this.state.currentIndex;
 
+      var children = lodash.get(this.state, 'children.props.children');
       var isLastImage = children.length === currentIndex + 1;
       var newIndex = isLastImage ? 0 : currentIndex + 1;
       this.onChangeIndex(newIndex);
@@ -306,15 +406,22 @@ var ImageModal = function (_Component) {
   }, {
     key: 'getCurrentSize',
     value: function getCurrentSize() {
-      var index = arguments.length <= 0 || arguments[0] === undefined ? this._initIndex : arguments[0];
+      var index = arguments.length <= 0 || arguments[0] === undefined ? this.state.currentIndex : arguments[0];
+
+      if (!this.refs.modal) return { currentWidth: this.state.lightboxConfig.initWidth, currentHeight: this.state.lightboxConfig.initHeight };
+
       var _state$lightboxConfig2 = this.state.lightboxConfig;
       var maxHeight = _state$lightboxConfig2.maxHeight;
       var maxWidth = _state$lightboxConfig2.maxWidth;
       var compatible = _state$lightboxConfig2.compatible;
 
-      var currentChildren = this.refs['order-' + index].children[0];
-      var imgWidth = currentChildren.naturalWidth || currentChildren.offsetWidth;
-      var imgHeight = currentChildren.naturalHeight || currentChildren.offsetHeight;
+      var currentChildren = this.refs.modal.getPanel(index);
+
+      var _currentChildren$size = currentChildren.size();
+
+      var imgWidth = _currentChildren$size.width;
+      var imgHeight = _currentChildren$size.height;
+
       var clientWidth = document.body.clientWidth - 18;
       var clientHeight = document.body.clientHeight - 68;
 
@@ -347,13 +454,13 @@ var ImageModal = function (_Component) {
   }, {
     key: 'onClickContent',
     value: function onClickContent() {
-      var _state3 = this.state;
-      var currentIndex = _state3.currentIndex;
-      var children = _state3.children;
-      var _state3$lightboxConfi = _state3.lightboxConfig;
-      var clickSwitch = _state3$lightboxConfi.clickSwitch;
-      var loop = _state3$lightboxConfi.loop;
+      var _state2 = this.state;
+      var currentIndex = _state2.currentIndex;
+      var _state2$lightboxConfi = _state2.lightboxConfig;
+      var clickSwitch = _state2$lightboxConfi.clickSwitch;
+      var loop = _state2$lightboxConfi.loop;
 
+      var children = lodash.get(this.state, 'children.props.children');
       var isLastImage = children.length === currentIndex + 1;
       if (!clickSwitch || !loop && isLastImage) return;
       this.onClickNext();
@@ -369,23 +476,22 @@ var ImageModal = function (_Component) {
   }, {
     key: 'renderTitleBar',
     value: function renderTitleBar() {
-      var _state4 = this.state;
-      var className = _state4.className;
-      var closeText = _state4.closeText;
-      var prevText = _state4.prevText;
-      var nextText = _state4.nextText;
-      var closeButton = _state4.closeButton;
-      var closeButtonClassName = _state4.closeButtonClassName;
-      var currentIndex = _state4.currentIndex;
-      var children = _state4.children;
-      var closeImagebox = this.props.closeImagebox;
+      var _state3 = this.state;
+      var className = _state3.className;
+      var closeText = _state3.closeText;
+      var prevText = _state3.prevText;
+      var nextText = _state3.nextText;
+      var closeButton = _state3.closeButton;
+      var closeButtonClassName = _state3.closeButtonClassName;
+      var currentIndex = _state3.currentIndex;
 
+      var children = lodash.get(this.state, 'children.props.children', []);
 
       var isLastImage = children.length === currentIndex + 1;
       var isFirstImage = currentIndex === 0;
 
-      var customTitle = currentIndex !== undefined && children[currentIndex].props['data-title'];
-      var text = customTitle ? customTitle : '';
+      var customTitle = this.refs.modal && this.refs.modal.getPanel(currentIndex).title();
+      var text = customTitle || '';
       if (currentIndex !== null && customTitle) {
         var links = customTitle.match(/\{\{([^}]+|\}[^}]+)*\}\}/g);
         if (links) {
@@ -436,7 +542,7 @@ var ImageModal = function (_Component) {
         closeButton && React__default.createElement(
           'button',
           {
-            onClick: closeImagebox,
+            onClick: this.closeImagebox,
             className: classNames('imagebox-btn--close', closeButtonClassName) },
           closeText
         )
@@ -445,7 +551,7 @@ var ImageModal = function (_Component) {
   }, {
     key: 'handleImageLoaded',
     value: function handleImageLoaded() {
-      if (!this._init) return;
+      if (!this._haveInit) return;
 
       var _getCurrentSize4 = this.getCurrentSize(this.state.currentIndex);
 
@@ -460,46 +566,34 @@ var ImageModal = function (_Component) {
   }, {
     key: 'renderChildren',
     value: function renderChildren() {
-      var _this5 = this;
+      var children = this.state.children;
+
+      if (children === null) return React__default.createElement('div', null);
 
       var _state$lightboxConfig3 = this.state.lightboxConfig;
       var fadeMode = _state$lightboxConfig3.fadeMode;
       var fadeSpeed = _state$lightboxConfig3.fadeSpeed;
 
-      var style = { 'transition': fadeMode ? 'all ' + fadeSpeed / 1000 + 's' : 'none' };
-      return this.state.children.map(function (children, index) {
-        var isCurrentIndex = index === _this5.state.currentIndex && !_this5.state.isSwitching;
-        if (children.props.children.type === 'img') {
-          var imgProps = {
-            src: !_this5._init ? null : children.props.children.props['data-src'] || children.props.children.props['src'],
-            onLoad: index === _this5.state.currentIndex ? _this5.handleImageLoaded.bind(_this5) : null
-          };
-          return React__default.createElement(
-            'li',
-            { key: index, ref: 'order-' + index,
-              style: style,
-              className: classNames({ 'is-active': isCurrentIndex && _this5.props.show }) },
-            React__default.createElement('img', imgProps)
-          );
-        } else {
-          return React.cloneElement(children, {
-            key: index,
-            ref: 'order-' + index,
-            style: style,
-            className: isCurrentIndex ? 'is-active' : ''
-          });
-        }
-      });
+      var childProps = {
+        show: this.state.show,
+        fadeMode: fadeMode,
+        fadeSpeed: fadeSpeed,
+        ref: 'modal',
+        currentIndex: this.state.currentIndex,
+        handleImageLoaded: this.handleImageLoaded,
+        haveInit: this._haveInit,
+        isSwitching: this.state.isSwitching
+      };
+      return React.cloneElement(children, childProps);
     }
   }, {
     key: 'render',
     value: function render() {
       var titleBar = this.state;
-      var _props = this.props;
-      var overlayOpacity = _props.overlayOpacity;
-      var show = _props.show;
-      var closeImagebox = _props.closeImagebox;
-      var className = _props.className;
+      var _state4 = this.state;
+      var overlayOpacity = _state4.overlayOpacity;
+      var show = _state4.show;
+      var className = _state4.className;
       var _state5 = this.state;
       var currentWidth = _state5.currentWidth;
       var currentHeight = _state5.currentHeight;
@@ -536,113 +630,136 @@ var ImageModal = function (_Component) {
             'div',
             { className: 'imagebox-content', ref: 'imagebox-content', style: contentStyle, onClick: this.onClickContent },
             React__default.createElement('span', { className: 'imagebox-loading', hidden: !this.state.isSwitching }),
-            React__default.createElement(
-              'ul',
-              null,
-              this.renderChildren()
-            )
+            this.renderChildren()
           )
         ),
-        React__default.createElement('div', { className: 'imagebox-overlay', style: { opacity: overlayOpacity }, onClick: closeImagebox })
+        React__default.createElement('div', { className: 'imagebox-overlay', style: { opacity: overlayOpacity }, onClick: this.closeImagebox })
       );
     }
   }]);
-  return ImageModal;
+  return Container;
 }(React.Component);
 
-var ImageboxModal = ImageModal;
+var Panel = function (_Component) {
+  inherits(Panel, _Component);
 
-var Imagebox = function (_Component) {
-  inherits(Imagebox, _Component);
-
-  function Imagebox(props) {
-    classCallCheck(this, Imagebox);
-
-    var _this = possibleConstructorReturn(this, Object.getPrototypeOf(Imagebox).call(this, props));
-
-    var defaultConfig = {
-      overlayOpacity: 0.75,
-      show: false,
-      fadeIn: false,
-      fadeInSpeed: 500,
-      fadeOut: true,
-      fadeOutSpeed: 500
-    };
-
-    _this.state = lodash.merge({}, defaultConfig, lodash.omit(_this.props, 'children'));
-    return _this;
+  function Panel() {
+    classCallCheck(this, Panel);
+    return possibleConstructorReturn(this, Object.getPrototypeOf(Panel).apply(this, arguments));
   }
 
-  createClass(Imagebox, [{
-    key: 'openImagebox',
-    value: function openImagebox(params) {
-      this.setState({ show: true, index: lodash.get(params, 'index') });
+  createClass(Panel, [{
+    key: 'size',
+    value: function size() {
+      var node = reactDom.findDOMNode(this.refs.content);
+      var width = node.naturalWidth || node.offsetWidth;
+      var height = node.naturalHeight || node.offsetHeight;
+      return { width: width, height: height };
     }
   }, {
-    key: 'closeImagebox',
-    value: function closeImagebox() {
-      this.setState({ show: false });
+    key: 'title',
+    value: function title() {
+      return this.props.title;
+    }
+  }, {
+    key: 'componentWillReceiveProps',
+    value: function componentWillReceiveProps(nextProps) {
+      if (nextProps.isCurrentIndex && this.props.isCurrentIndex !== nextProps.isCurrentIndex) {
+        this.props.handleImageLoaded();
+      }
     }
   }, {
     key: 'renderChildren',
     value: function renderChildren() {
-      var _this2 = this;
+      var _props = this.props;
+      var children = _props.children;
+      var show = _props.show;
+      var haveInit = _props.haveInit;
 
-      var children = this.props.children;
+      if (children.type === 'img') {
+        var isLazyLoad = lodash.get(children.props, 'data-src', false);
+        var imgProps = {
+          src: isLazyLoad && show || haveInit ? children.props['data-src'] : children.props['src'],
+          ref: 'content'
+        };
+        return React__default.createElement('img', imgProps);
+      } else {
+        return React.cloneElement(children, {
+          ref: 'content'
+        });
+      }
+    }
+  }, {
+    key: 'render',
+    value: function render() {
+      var _props2 = this.props;
+      var isCurrentIndex = _props2.isCurrentIndex;
+      var show = _props2.show;
+      var fadeMode = _props2.fadeMode;
+      var fadeSpeed = _props2.fadeSpeed;
 
-      var childrenSource = children.length > 1 ? children : new Array(children);
-      return childrenSource.map(function (child, index) {
-        var childProps = _extends({
+      var style = { 'transition': fadeMode ? 'all ' + fadeSpeed / 1000 + 's' : 'none' };
+      return React__default.createElement(
+        'li',
+        {
+          style: style,
+          className: classNames({ 'is-active': isCurrentIndex && show }) },
+        this.renderChildren()
+      );
+    }
+  }]);
+  return Panel;
+}(React.Component);
+
+var Modal = function (_Component) {
+  inherits(Modal, _Component);
+
+  function Modal() {
+    classCallCheck(this, Modal);
+    return possibleConstructorReturn(this, Object.getPrototypeOf(Modal).apply(this, arguments));
+  }
+
+  createClass(Modal, [{
+    key: 'getPanel',
+    value: function getPanel(index) {
+      return this.refs['order-' + index];
+    }
+  }, {
+    key: 'renderChildren',
+    value: function renderChildren() {
+      var _props = this.props;
+      var children = _props.children;
+      var rest = objectWithoutProperties(_props, ['children']);
+
+      return children.map(function (child, index) {
+        var isCurrentIndex = index === rest.currentIndex && !rest.isSwitching;
+        var props = lodash.merge({}, rest, {
           key: index,
-          openImagebox: _this2.openImagebox.bind(_this2),
-          closeImagebox: _this2.closeImagebox.bind(_this2)
-        }, _this2.state);
-        for (var j in _this2.state) {
-          childProps[j] = _this2.state[j];
-        }
-        return React.cloneElement(child, childProps);
+          ref: 'order-' + index,
+          isCurrentIndex: isCurrentIndex
+        });
+        return React.cloneElement(child, props);
       });
     }
   }, {
     key: 'render',
     value: function render() {
       return React__default.createElement(
-        'div',
+        'ul',
         null,
         this.renderChildren()
       );
     }
   }]);
-  return Imagebox;
+  return Modal;
 }(React.Component);
 
-var ImageboxTrigger = function (_Component2) {
-  inherits(ImageboxTrigger, _Component2);
+var ImageboxContainer = Container;
+var ImageboxPanel = Panel;
+var ImageboxManager = Manager$1;
+var ImageboxModal = Modal;
 
-  function ImageboxTrigger() {
-    classCallCheck(this, ImageboxTrigger);
-    return possibleConstructorReturn(this, Object.getPrototypeOf(ImageboxTrigger).apply(this, arguments));
-  }
-
-  createClass(ImageboxTrigger, [{
-    key: 'render',
-    value: function render() {
-      var _this4 = this;
-
-      var childProps = {};
-      Object.keys(this.props).map(function (key) {
-        if (key !== 'children' && key !== 'openImagebox' && key !== 'className') {
-          childProps[key] = _this4.props[key];
-        } else if (key === 'openImagebox') {
-          childProps['onClick'] = _this4.props[key];
-        }
-      });
-      return React.cloneElement(this.props.children, childProps);
-    }
-  }]);
-  return ImageboxTrigger;
-}(React.Component);
-
+exports.ImageboxContainer = ImageboxContainer;
+exports.ImageboxPanel = ImageboxPanel;
+exports.ImageboxManager = ImageboxManager;
 exports.ImageboxModal = ImageboxModal;
-exports.Imagebox = Imagebox;
-exports.ImageboxTrigger = ImageboxTrigger;

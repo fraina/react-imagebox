@@ -1,4 +1,15 @@
 import * as React from "react";
+
+export interface ImageboxPanelProps {
+    title?: string;
+}
+
+export class ImageboxPanel extends React.Component<ImageboxPanelProps, {}> {
+}
+
+export class ImageboxModal extends React.Component<{}, {}> {
+}
+
 export interface TitleBarConfig {
     enable?: boolean;
     className?: string;
@@ -42,12 +53,18 @@ export interface Config {
     onClosed?: () => void;
 }
 
-export class Imagebox extends React.Component<Config, {}> {
-    openImagebox(): void;
-    closeImagebox(): void;
+export interface Content {
+    content?: JSX.Element;
+    index?: number;
+    config?: Config;
 }
 
-export class ImageboxTrigger extends React.Component<{}, {}> {
+interface _ImageboxManager {
+    open(content: Content): void;
+    close(): void;
 }
-export class ImageboxModal extends React.Component<{}, {}> {
+
+declare var ImageboxManager: _ImageboxManager;
+
+export class ImageboxContainer extends React.Component<Config, {}> {
 }

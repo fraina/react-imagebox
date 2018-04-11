@@ -1,5 +1,5 @@
-import React, { Component, cloneElement } from 'react';
-import { merge } from 'lodash';
+import React, { Component, cloneElement } from 'react'
+import { merge } from 'lodash'
 
 export class Modal extends Component {
   constructor() {
@@ -16,15 +16,15 @@ export class Modal extends Component {
   }
 
   renderChildren() {
-    const { children, ...rest } = this.props;
+    const { children, ...rest } = this.props
     return children.map((child, index) => {
-      const isCurrentIndex = index === rest.currentIndex && !rest.isSwitching;
+      const isCurrentIndex = index === rest.currentIndex && !rest.isSwitching
       const props = merge({}, rest, {
         key: index,
         setRef: (c) => this.orderList[`order${index}`] = c,
         isCurrentIndex
       })
-      return cloneElement(child, props);
+      return cloneElement(child, props)
     })
   }
 

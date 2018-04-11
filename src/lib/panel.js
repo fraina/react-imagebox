@@ -1,18 +1,26 @@
-import React, { Component, cloneElement } from 'react';
-import { findDOMNode } from 'react-dom';
-import { get } from 'lodash';
-import classNames from 'classnames';
+import React, { Component, cloneElement } from 'react'
+import { get } from 'lodash'
+import classNames from 'classnames'
 
 export class Panel extends Component {
+  constructor() {
+    super()
+    this.content = null
+  }
+
+  componentWillMount() {
+    this.props.setRef(this)
+  }
+
   size() {
-    const node = findDOMNode(this.refs.content);
-    const width = node.naturalWidth || node.offsetWidth;
-    const height = node.naturalHeight || node.offsetHeight;
+    const node = this.content
+    const width = node ? node.naturalWidth || node.offsetWidth : 0
+    const height = node ? node.naturalHeight || node.offsetHeight : 0
     return { width, height }
   }
 
   title() {
-    return this.props.title;
+    return this.props.title
   }
 
   componentWillReceiveProps(nextProps) {
@@ -22,12 +30,12 @@ export class Panel extends Component {
   }
 
   renderChildren() {
-    const { children, show, haveInit } = this.props;
+    const { children, show, haveInit } = this.props
     if (children.type === 'img') {
-      const isLazyLoad = get(children.props, 'data-src', false);
+      const isLazyLoad = get(children.props, 'data-src', false)
       var imgProps = {
         src: (isLazyLoad && show) || haveInit ? children.props['data-src'] : children.props['src'],
-        ref: 'content'
+        ref: c => this.content = c
       }
       return (
         <img { ...imgProps } />
@@ -35,15 +43,15 @@ export class Panel extends Component {
     } else {
       return (
         cloneElement(children, {
-          ref: 'content'
+          ref: c => this.content = c
         })
       );
     }
   }
 
   render() {
-    const { isCurrentIndex, show, fadeMode, fadeSpeed } = this.props;
-    const style = { 'transition': fadeMode ? `all ${fadeSpeed / 1000}s` : 'none' };
+    const { isCurrentIndex, show, fadeMode, fadeSpeed } = this.props
+    const style = { 'transition': fadeMode ? `all ${fadeSpeed / 1000}s` : 'none' }
     return (
       <li
         style={style}

@@ -21,6 +21,7 @@ export class Container extends Component {
     this.handleStoreChange = this.handleStoreChange.bind(this);
 
     this.closeImagebox = Manager.close.bind(Manager);
+    this.modal = null
   }
 
   getConfig(params = this.props) {
@@ -211,13 +212,13 @@ export class Container extends Component {
   }
 
   getCurrentSize(index = this.state.currentIndex) {
-    if (!this.refs.modal) return { currentWidth: this.state.lightboxConfig.initWidth, currentHeight: this.state.lightboxConfig.initHeight }
+    if (!this.modal) return { currentWidth: this.state.lightboxConfig.initWidth, currentHeight: this.state.lightboxConfig.initHeight }
 
     const { maxHeight, maxWidth, compatible } = this.state.lightboxConfig;
-    const currentChildren = this.refs.modal.getPanel(index);
     const { width: imgWidth, height: imgHeight } = currentChildren.size();
     const clientWidth = document.body.clientWidth - 18;
     const clientHeight = document.body.clientHeight - 68;
+    const currentChildren = this.modal.getPanel(index)
 
     var currentWidth, currentHeight, ratio;
     if (maxWidth && imgWidth > maxWidth && imgWidth > imgHeight) {
@@ -269,8 +270,8 @@ export class Container extends Component {
     const isFirstImage = currentIndex === 0;
 
 
-    const customTitle = this.refs.modal && this.refs.modal.getPanel(currentIndex).title();
     var text = customTitle || '';
+    const customTitle = this.modal && this.modal.getPanel(currentIndex).title()
     if (currentIndex !== null && customTitle) {
       const links = customTitle.match(/\{\{([^}]+|\}[^}]+)*\}\}/g);
       if (links) {
@@ -334,7 +335,7 @@ export class Container extends Component {
       show: this.state.show,
       fadeMode,
       fadeSpeed,
-      ref: 'modal',
+      setRef: c => this.modal = c,
       currentIndex: this.state.currentIndex,
       handleImageLoaded: this.handleImageLoaded,
       haveInit: this._haveInit,
@@ -381,7 +382,7 @@ export class Container extends Component {
         style={{ transition: this.state.transition }}>
         <div className={classNames('imagebox-wrapper', className)}>
           { titleBar.enable && this.renderTitleBar() }
-          <div className="imagebox-content" ref="imagebox-content" style={contentStyle} onClick={this.onClickContent}>
+          <div className="imagebox-content" style={contentStyle} onClick={this.onClickContent}>
             <span className="imagebox-loading" hidden={!this.state.isSwitching}></span>
             {this.renderChildren()}
           </div>

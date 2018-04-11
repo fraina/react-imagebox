@@ -2,8 +2,17 @@ import React, { Component, cloneElement } from 'react';
 import { merge } from 'lodash';
 
 export class Modal extends Component {
+  constructor() {
+    super()
+    this.orderList = {}
+  }
+
+  componentWillMount() {
+    this.props.setRef(this)
+  }
+
   getPanel(index) {
-    return this.refs[`order-${index}`];
+    return this.orderList[`order${index}`]
   }
 
   renderChildren() {
@@ -12,7 +21,7 @@ export class Modal extends Component {
       const isCurrentIndex = index === rest.currentIndex && !rest.isSwitching;
       const props = merge({}, rest, {
         key: index,
-        ref: `order-${index}`,
+        setRef: (c) => this.orderList[`order${index}`] = c,
         isCurrentIndex
       })
       return cloneElement(child, props);

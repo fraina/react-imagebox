@@ -1,6 +1,6 @@
 {
   "name": "react-imagebox",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A simple image lightbox component for react",
   "main": "dist/react-imagebox.js",
   "typings": "dist/react-imagebox.d.ts",
@@ -14,7 +14,7 @@
     "lightbox",
     "pop-up"
   ],
-  "author": "Fraina <jscaem@gmail.com> (http://github.com/Fraina)",
+  "author": "Faryn Huang <jscaem@gmail.com> (http://github.com/fraina)",
   "license": "MIT",
   "bugs": {
     "url": "http://github.com/Fraina/react-imagebox/issues"

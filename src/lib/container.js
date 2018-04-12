@@ -4,8 +4,8 @@ import classNames from 'classnames'
 import Manager from './manager'
 
 export class Container extends Component {
-  constructor() {
-    super()
+  constructor(props) {
+    super(props)
 
     this._haveInit = false
     this._timeoutQueue = []
@@ -350,7 +350,6 @@ export class Container extends Component {
       show,
       className
     } = this.state
-
     const {
       currentWidth,
       currentHeight,

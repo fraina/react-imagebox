@@ -17860,10 +17860,10 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var Container = exports.Container = function (_Component) {
   _inherits(Container, _Component);
 
-  function Container() {
+  function Container(props) {
     _classCallCheck(this, Container);
 
-    var _this = _possibleConstructorReturn(this, (Container.__proto__ || Object.getPrototypeOf(Container)).call(this));
+    var _this = _possibleConstructorReturn(this, (Container.__proto__ || Object.getPrototypeOf(Container)).call(this, props));
 
     _this._haveInit = false;
     _this._timeoutQueue = [];

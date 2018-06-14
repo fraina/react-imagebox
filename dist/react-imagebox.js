@@ -17865,10 +17865,9 @@ var Container = exports.Container = function (_Component) {
 
     var _this = _possibleConstructorReturn(this, (Container.__proto__ || Object.getPrototypeOf(Container)).call(this, props));
 
-    _this._haveInit = false;
     _this._timeoutQueue = [];
 
-    _this._defaultState = _this.getConfig();
+    _this._defaultState = _this.getConfig({ params: props, isInit: true });
     _this.state = _this._defaultState;
 
     _this.onClickPrev = _this.onClickPrev.bind(_this);
@@ -17884,57 +17883,51 @@ var Container = exports.Container = function (_Component) {
 
   _createClass(Container, [{
     key: 'getConfig',
-    value: function getConfig() {
-      var params = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.props;
+    value: function getConfig(_ref) {
+      var params = _ref.params,
+          isInit = _ref.isInit;
 
-      if (!params) return {};
       var defaultConfig = {
         overlayOpacity: 0.75,
         show: false,
         fadeIn: false,
         fadeInSpeed: 500,
         fadeOut: true,
-        fadeOutSpeed: 500
-      };
-
-      var defaultTitlebarConfig = {
-        enable: true,
-        closeButton: true,
-        closeText: '✕',
-        position: 'top',
-        prevText: '﹤',
-        nextText: '﹥',
+        fadeOutSpeed: 500,
+        isSwitching: true,
         currentIndex: 0,
+        titleBar: {
+          enable: true,
+          closeButton: true,
+          closeText: '✕',
+          position: 'top',
+          prevText: '﹤',
+          nextText: '﹥'
+        },
+        lightbox: {
+          speed: 500,
+          smoothResize: true,
+          fadeMode: true,
+          fadeSpeed: 300,
 
-        isSwitching: true
+          loop: true,
+          clickSwitch: true,
+          compatible: true,
+
+          maxHeight: 800,
+          maxWidth: 1000,
+          minHeight: 0,
+          minWidth: 0,
+          initWidth: 200,
+          initHeight: 200
+        }
       };
+      if (isInit && !params) return defaultConfig;
 
-      var defaultLightboxConfig = {
-        speed: 500,
-        smoothResize: true,
-        fadeMode: true,
-        fadeSpeed: 300,
-
-        loop: true,
-        clickSwitch: true,
-        compatible: true,
-
-        maxHeight: 800,
-        maxWidth: 1000,
-        minHeight: 0,
-        minWidth: 0,
-        initWidth: 200,
-        initHeight: 200
-      };
-
-      var _config = (0, _lodash.merge)({}, defaultConfig, (0, _lodash.omit)(params, ['children', 'lightbox']));
-      this._lightboxConfig = (0, _lodash.merge)({}, defaultLightboxConfig, params.lightbox);
-      return (0, _lodash.merge)({}, _config, defaultTitlebarConfig, params.titleBar, {
-        children: null,
-        callback: {},
-        currentWidth: (0, _lodash.get)(this._lightboxConfig, 'initWidth'),
-        currentHeight: (0, _lodash.get)(this._lightboxConfig, 'initHeight'),
-        lightboxConfig: this._lightboxConfig
+      var _config = (0, _lodash.merge)({}, isInit ? defaultConfig : this._defaultState, params);
+      return (0, _lodash.merge)({}, _config, {
+        currentWidth: (0, _lodash.get)(_config.lightbox, 'initWidth'),
+        currentHeight: (0, _lodash.get)(_config.lightbox, 'initHeight')
       });
     }
   }, {
@@ -17967,28 +17960,29 @@ var Container = exports.Container = function (_Component) {
         if (show) {
           var onComplete = this.props.onComplete;
 
-          this.setState((0, _lodash.merge)({}, this.getConfig(config), {
-            children: children,
+          this.setState((0, _lodash.merge)({}, this.getConfig({ params: config, isInit: false }), {
             show: true,
-            transition: fadeIn ? 'all ' + fadeInSpeed / 1000 + 's ease-in-out' : 'none',
-            callback: setTimeout(function () {
-              onComplete && onComplete();
-            }, fadeInSpeed + 1)
+            children: children,
+            transition: fadeIn ? 'all ' + fadeInSpeed / 1000 + 's ease-in-out' : 'none'
           }));
-          setTimeout(function () {
-            _this2.onOpen(index);
-          }, 0);
+
+          this._timeoutQueue.push(setTimeout(function () {
+            onComplete && onComplete();
+          }, fadeInSpeed + 1));
+
+          this.onOpen(index);
         } else {
           var onCleanUp = this.props.onCleanUp;
 
           onCleanUp && onCleanUp();
           this.setState({
             show: false,
-            transition: fadeOut ? 'all ' + fadeOutSpeed / 1000 + 's ease-in-out' : 'none',
-            callback: setTimeout(function () {
-              _this2.onClosed();
-            }, fadeOutSpeed + 1)
+            transition: fadeOut ? 'all ' + fadeOutSpeed / 1000 + 's ease-in-out' : 'none'
           });
+
+          this._timeoutQueue.push(setTimeout(function () {
+            _this2.onClosed();
+          }, fadeOutSpeed + 1));
         }
       }
     }
@@ -18018,38 +18012,30 @@ var Container = exports.Container = function (_Component) {
     value: function onOpen(index) {
       var _this3 = this;
 
-      this._haveInit = true;
-      this.cleanUp();
+      var _state$lightbox = this.state.lightbox,
+          speed = _state$lightbox.speed,
+          initHeight = _state$lightbox.initHeight,
+          initWidth = _state$lightbox.initWidth;
       var onOpen = this.props.onOpen;
 
       onOpen && onOpen();
 
-      var trasitionSpeed = this.state.lightboxConfig.speed || 0;
-
-      var _getCurrentSize = this.getCurrentSize(index),
-          currentWidth = _getCurrentSize.currentWidth,
-          currentHeight = _getCurrentSize.currentHeight;
-
+      var trasitionSpeed = speed || 0;
       this.setState({
         isSwitching: true,
         currentIndex: index,
-        currentWidth: currentWidth,
-        currentHeight: currentHeight,
-        lightboxConfig: (0, _lodash.merge)({}, this.state.lightboxConfig, {
-          smoothResize: this._lightboxConfig.smoothResize
-        })
+        currentWidth: initWidth,
+        currentHeight: initHeight
       });
 
       this._timeoutQueue.push(setTimeout(function () {
-        _this3.setState({
-          isSwitching: false
-        });
+        _this3.setState({ isSwitching: false });
       }, trasitionSpeed));
 
       window.onresize = function () {
-        var _getCurrentSize2 = _this3.getCurrentSize(_this3.state.currentIndex),
-            currentWidth = _getCurrentSize2.currentWidth,
-            currentHeight = _getCurrentSize2.currentHeight;
+        var _getCurrentSize = _this3.getCurrentSize(_this3.state.currentIndex),
+            currentWidth = _getCurrentSize.currentWidth,
+            currentHeight = _getCurrentSize.currentHeight;
 
         _this3.setState({
           currentWidth: currentWidth,
@@ -18064,8 +18050,9 @@ var Container = exports.Container = function (_Component) {
 
       onClosed && onClosed();
       this.setState((0, _lodash.merge)({}, this._defaultState, {
-        lightboxConfig: (0, _lodash.merge)({}, this.state.lightboxConfig, { smoothResize: false })
+        lightbox: (0, _lodash.merge)({}, this.state.lightbox, { smoothResize: false })
       }));
+      this.cleanUp();
     }
   }, {
     key: 'onClickPrev',
@@ -18093,43 +18080,31 @@ var Container = exports.Container = function (_Component) {
       var _this4 = this;
 
       this.cleanUp();
-      var _state$lightboxConfig = this.state.lightboxConfig,
-          speed = _state$lightboxConfig.speed,
-          fadeSpeed = _state$lightboxConfig.fadeSpeed,
-          fadeMode = _state$lightboxConfig.fadeMode;
-
-      var _getCurrentSize3 = this.getCurrentSize(newIndex),
-          currentWidth = _getCurrentSize3.currentWidth,
-          currentHeight = _getCurrentSize3.currentHeight;
+      var _state$lightbox2 = this.state.lightbox,
+          speed = _state$lightbox2.speed,
+          fadeMode = _state$lightbox2.fadeMode;
 
       this.state.isSwitching = true;
-      this.newIndex = newIndex;
       this.state.currentIndex = newIndex;
       this.forceUpdate();
-
-      this._timeoutQueue.push(setTimeout(function () {
-        _this4.state.currentWidth = currentWidth || _this4.state.minWidth;
-        _this4.state.currentHeight = currentHeight || _this4.state.minHeight;
-        _this4.forceUpdate();
-      }, fadeMode && fadeSpeed || 0));
 
       this._timeoutQueue.push(setTimeout(function () {
         _this4.setState({
           isSwitching: false
         });
-      }, fadeMode ? (speed || 0) + (fadeSpeed || 0) : 0));
+      }, fadeMode ? speed : 0));
     }
   }, {
     key: 'getCurrentSize',
     value: function getCurrentSize() {
       var index = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.state.currentIndex;
 
-      if (!this.modal) return { currentWidth: this.state.lightboxConfig.initWidth, currentHeight: this.state.lightboxConfig.initHeight };
+      if (!this.modal) return { currentWidth: this.state.lightbox.initWidth, currentHeight: this.state.lightbox.initHeight };
 
-      var _state$lightboxConfig2 = this.state.lightboxConfig,
-          maxHeight = _state$lightboxConfig2.maxHeight,
-          maxWidth = _state$lightboxConfig2.maxWidth,
-          compatible = _state$lightboxConfig2.compatible;
+      var _state$lightbox3 = this.state.lightbox,
+          maxHeight = _state$lightbox3.maxHeight,
+          maxWidth = _state$lightbox3.maxWidth,
+          compatible = _state$lightbox3.compatible;
 
       var currentChildren = this.modal.getPanel(index);
 
@@ -18140,7 +18115,9 @@ var Container = exports.Container = function (_Component) {
       var clientWidth = document.body.clientWidth - 18;
       var clientHeight = document.body.clientHeight - 68;
 
-      var currentWidth, currentHeight, ratio;
+      var currentWidth = void 0,
+          currentHeight = void 0,
+          ratio = void 0;
       if (maxWidth && imgWidth > maxWidth && imgWidth > imgHeight) {
         ratio = (compatible && clientWidth < maxWidth ? clientWidth : maxWidth) / imgWidth;
         currentWidth = compatible && clientWidth < maxWidth ? clientWidth : maxWidth;
@@ -18171,9 +18148,9 @@ var Container = exports.Container = function (_Component) {
     value: function onClickContent() {
       var _state2 = this.state,
           currentIndex = _state2.currentIndex,
-          _state2$lightboxConfi = _state2.lightboxConfig,
-          clickSwitch = _state2$lightboxConfi.clickSwitch,
-          loop = _state2$lightboxConfi.loop;
+          _state2$lightbox = _state2.lightbox,
+          clickSwitch = _state2$lightbox.clickSwitch,
+          loop = _state2$lightbox.loop;
 
       var children = (0, _lodash.get)(this.state, 'children.props.children');
       var isLastImage = children.length === currentIndex + 1;
@@ -18183,25 +18160,24 @@ var Container = exports.Container = function (_Component) {
   }, {
     key: 'cleanUp',
     value: function cleanUp() {
-      clearTimeout(this.state.callback);
       this._timeoutQueue.forEach(function (timeout) {
         clearTimeout(timeout);
       });
+      this._timeoutQueue = [];
     }
   }, {
     key: 'renderTitleBar',
     value: function renderTitleBar() {
-      var _state3 = this.state,
-          className = _state3.className,
-          closeText = _state3.closeText,
-          prevText = _state3.prevText,
-          nextText = _state3.nextText,
-          closeButton = _state3.closeButton,
-          closeButtonClassName = _state3.closeButtonClassName,
-          currentIndex = _state3.currentIndex;
+      var currentIndex = this.state.currentIndex;
+      var _state$titleBar = this.state.titleBar,
+          className = _state$titleBar.className,
+          closeText = _state$titleBar.closeText,
+          prevText = _state$titleBar.prevText,
+          nextText = _state$titleBar.nextText,
+          closeButton = _state$titleBar.closeButton,
+          closeButtonClassName = _state$titleBar.closeButtonClassName;
 
       var children = (0, _lodash.get)(this.state, 'children.props.children', []);
-
       var isLastImage = children.length === currentIndex + 1;
       var isFirstImage = currentIndex === 0;
 
@@ -18234,7 +18210,7 @@ var Container = exports.Container = function (_Component) {
             {
               onClick: this.onClickPrev,
               className: 'lightbox-btn lightbox-btn--prev',
-              disabled: !this.state.lightboxConfig.loop && isFirstImage },
+              disabled: !this.state.lightbox.loop && isFirstImage },
             prevText
           ),
           _react2.default.createElement(
@@ -18249,7 +18225,7 @@ var Container = exports.Container = function (_Component) {
             {
               onClick: this.onClickNext,
               className: 'lightbox-btn lightbox-btn--next',
-              disabled: !this.state.lightboxConfig.loop && isLastImage },
+              disabled: !this.state.lightbox.loop && isLastImage },
             nextText
           )
         ),
@@ -18266,11 +18242,9 @@ var Container = exports.Container = function (_Component) {
   }, {
     key: 'handleImageLoaded',
     value: function handleImageLoaded() {
-      if (!this._haveInit) return;
-
-      var _getCurrentSize4 = this.getCurrentSize(this.state.currentIndex),
-          currentWidth = _getCurrentSize4.currentWidth,
-          currentHeight = _getCurrentSize4.currentHeight;
+      var _getCurrentSize2 = this.getCurrentSize(this.state.currentIndex),
+          currentWidth = _getCurrentSize2.currentWidth,
+          currentHeight = _getCurrentSize2.currentHeight;
 
       this.setState({
         currentWidth: currentWidth,
@@ -18282,13 +18256,11 @@ var Container = exports.Container = function (_Component) {
     value: function renderChildren() {
       var _this5 = this;
 
-      var children = this.state.children;
-
-      if (children === null) return _react2.default.createElement('div', null);
-
-      var _state$lightboxConfig3 = this.state.lightboxConfig,
-          fadeMode = _state$lightboxConfig3.fadeMode,
-          fadeSpeed = _state$lightboxConfig3.fadeSpeed;
+      var _state$lightbox4 = this.state.lightbox,
+          fadeMode = _state$lightbox4.fadeMode,
+          fadeSpeed = _state$lightbox4.fadeSpeed,
+          initHeight = _state$lightbox4.initHeight,
+          initWidth = _state$lightbox4.initWidth;
 
       var childProps = {
         show: this.state.show,
@@ -18299,29 +18271,31 @@ var Container = exports.Container = function (_Component) {
         },
         currentIndex: this.state.currentIndex,
         handleImageLoaded: this.handleImageLoaded,
-        haveInit: this._haveInit,
-        isSwitching: this.state.isSwitching
+        isSwitching: this.state.isSwitching,
+        initHeight: initHeight,
+        initWidth: initWidth
       };
-      return (0, _react.cloneElement)(children, childProps);
+      return (0, _react.cloneElement)(this.state.children, childProps);
     }
   }, {
     key: 'render',
     value: function render() {
-      var titleBar = this.state;
-      var _state4 = this.state,
-          overlayOpacity = _state4.overlayOpacity,
-          show = _state4.show,
-          className = _state4.className;
-      var _state5 = this.state,
-          currentWidth = _state5.currentWidth,
-          currentHeight = _state5.currentHeight,
-          _state5$lightboxConfi = _state5.lightboxConfig,
-          smoothResize = _state5$lightboxConfi.smoothResize,
-          speed = _state5$lightboxConfi.speed,
-          maxWidth = _state5$lightboxConfi.maxWidth,
-          maxHeight = _state5$lightboxConfi.maxHeight,
-          minWidth = _state5$lightboxConfi.minWidth,
-          minHeight = _state5$lightboxConfi.minHeight;
+      var _state3 = this.state,
+          overlayOpacity = _state3.overlayOpacity,
+          show = _state3.show,
+          className = _state3.className,
+          titleBar = _state3.titleBar,
+          currentWidth = _state3.currentWidth,
+          currentHeight = _state3.currentHeight,
+          isSwitching = _state3.isSwitching,
+          children = _state3.children,
+          _state3$lightbox = _state3.lightbox,
+          smoothResize = _state3$lightbox.smoothResize,
+          speed = _state3$lightbox.speed,
+          maxWidth = _state3$lightbox.maxWidth,
+          maxHeight = _state3$lightbox.maxHeight,
+          minWidth = _state3$lightbox.minWidth,
+          minHeight = _state3$lightbox.minHeight;
 
 
       var contentStyle = {
@@ -18338,7 +18312,7 @@ var Container = exports.Container = function (_Component) {
         'div',
         { className: (0, _classnames2.default)('imagebox', { 'is-active': show }),
           'data-type': 'lightbox',
-          'data-title': titleBar.enable ? titleBar.position : null,
+          'data-title': titleBar.enable ? titleBar.position : undefined,
           style: { transition: this.state.transition } },
         _react2.default.createElement(
           'div',
@@ -18347,8 +18321,8 @@ var Container = exports.Container = function (_Component) {
           _react2.default.createElement(
             'div',
             { className: 'imagebox-content', style: contentStyle, onClick: this.onClickContent },
-            _react2.default.createElement('span', { className: 'imagebox-loading', hidden: !this.state.isSwitching }),
-            this.renderChildren()
+            _react2.default.createElement('span', { className: 'imagebox-loading', hidden: !isSwitching }),
+            children && this.renderChildren()
           )
         ),
         _react2.default.createElement('div', { className: 'imagebox-overlay', style: { opacity: overlayOpacity }, onClick: this.closeImagebox })
@@ -18392,16 +18366,30 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var Modal = exports.Modal = function (_Component) {
   _inherits(Modal, _Component);
 
-  function Modal() {
+  function Modal(props) {
     _classCallCheck(this, Modal);
 
-    var _this = _possibleConstructorReturn(this, (Modal.__proto__ || Object.getPrototypeOf(Modal)).call(this));
+    var _this = _possibleConstructorReturn(this, (Modal.__proto__ || Object.getPrototypeOf(Modal)).call(this, props));
 
     _this.orderList = {};
+    _this.state = {
+      currentIndex: props.currentIndex
+    };
     return _this;
   }
 
   _createClass(Modal, [{
+    key: 'componentWillReceiveProps',
+    value: function componentWillReceiveProps(nextProps) {
+      var _this2 = this;
+
+      if (this.state.currentIndex !== nextProps.currentIndex) {
+        setTimeout(function () {
+          _this2.setState({ currentIndex: nextProps.currentIndex });
+        }, nextProps.fadeMode ? nextProps.fadeSpeed : 0);
+      }
+    }
+  }, {
     key: 'componentWillMount',
     value: function componentWillMount() {
       this.props.setRef(this);
@@ -18414,18 +18402,18 @@ var Modal = exports.Modal = function (_Component) {
   }, {
     key: 'renderChildren',
     value: function renderChildren() {
-      var _this2 = this;
+      var _this3 = this;
 
       var _props = this.props,
           children = _props.children,
           rest = _objectWithoutProperties(_props, ['children']);
 
       return children.map(function (child, index) {
-        var isCurrentIndex = index === rest.currentIndex && !rest.isSwitching;
+        var isCurrentIndex = index === _this3.state.currentIndex;
         var props = (0, _lodash.merge)({}, rest, {
           key: index,
           setRef: function setRef(c) {
-            return _this2.orderList['order' + index] = c;
+            return _this3.orderList['order' + index] = c;
           },
           isCurrentIndex: isCurrentIndex
         });
@@ -18458,6 +18446,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.Panel = undefined;
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _react = __webpack_require__(3);
@@ -18487,6 +18477,9 @@ var Panel = exports.Panel = function (_Component) {
     var _this = _possibleConstructorReturn(this, (Panel.__proto__ || Object.getPrototypeOf(Panel)).call(this));
 
     _this.content = null;
+    _this.state = {
+      isVisible: false
+    };
     return _this;
   }
 
@@ -18498,9 +18491,13 @@ var Panel = exports.Panel = function (_Component) {
   }, {
     key: 'size',
     value: function size() {
+      var _props = this.props,
+          initWidth = _props.initWidth,
+          initHeight = _props.initHeight;
+
       var node = this.content;
-      var width = node ? node.naturalWidth || node.offsetWidth : 0;
-      var height = node ? node.naturalHeight || node.offsetHeight : 0;
+      var width = node ? node.naturalWidth || node.offsetWidth : initWidth;
+      var height = node ? node.naturalHeight || node.offsetHeight : initHeight;
       return { width: width, height: height };
     }
   }, {
@@ -18511,36 +18508,45 @@ var Panel = exports.Panel = function (_Component) {
   }, {
     key: 'componentWillReceiveProps',
     value: function componentWillReceiveProps(nextProps) {
-      if (nextProps.isCurrentIndex && this.props.isCurrentIndex !== nextProps.isCurrentIndex) {
-        this.props.handleImageLoaded();
+      var _this2 = this;
+
+      if (this.props.currentIndex !== nextProps.currentIndex) {
+        clearTimeout(this._timeout);
+        this.setState({ isVisible: false });
+      }
+
+      if (this.props.isSwitching !== nextProps.isSwitching) {
+        this._timeout = setTimeout(function () {
+          _this2.setState({ isVisible: !nextProps.isSwitching });
+          _this2.props.handleImageLoaded();
+        }, nextProps.fadeMode ? nextProps.fadeSpeed : 0);
       }
     }
   }, {
     key: 'renderChildren',
     value: function renderChildren() {
-      var _this2 = this;
+      var _this3 = this;
 
-      var _props = this.props,
-          children = _props.children,
-          show = _props.show,
-          haveInit = _props.haveInit;
+      var children = this.props.children;
+
 
       if (children.type === 'img') {
-        var isLazyLoad = (0, _lodash.get)(children.props, 'data-src', false);
         var imgProps = {
-          src: isLazyLoad && show || haveInit ? children.props['data-src'] : children.props['src'],
+          src: children.props.src || children.props['data-src'],
           ref: function ref(c) {
-            return _this2.content = c;
+            return _this3.content = c;
           }
         };
-        return _react2.default.createElement('img', imgProps);
-      } else {
-        return (0, _react.cloneElement)(children, {
-          ref: function ref(c) {
-            return _this2.content = c;
-          }
-        });
+        return _react2.default.createElement('img', _extends({}, imgProps, { onLoad: function onLoad(e) {
+            return _this3.props.handleImageLoaded();
+          } }));
       }
+
+      return (0, _react.cloneElement)(children, {
+        ref: function ref(c) {
+          return _this3.content = c;
+        }
+      });
     }
   }, {
     key: 'render',
@@ -18551,13 +18557,17 @@ var Panel = exports.Panel = function (_Component) {
           fadeMode = _props2.fadeMode,
           fadeSpeed = _props2.fadeSpeed;
 
-      var style = { 'transition': fadeMode ? 'all ' + fadeSpeed / 1000 + 's' : 'none' };
+      var style = {
+        transition: fadeMode ? 'all ' + fadeSpeed / 1000 + 's' : 'none',
+        opacity: this.state.isVisible ? 1 : 0
+      };
       return _react2.default.createElement(
         'li',
         {
           style: style,
-          className: (0, _classnames2.default)({ 'is-active': isCurrentIndex && show }) },
-        this.renderChildren()
+          className: (0, _classnames2.default)({ 'is-active': isCurrentIndex && show })
+        },
+        show && isCurrentIndex && this.renderChildren()
       );
     }
   }]);

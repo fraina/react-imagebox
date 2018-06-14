@@ -2,9 +2,20 @@ import React, { Component, cloneElement } from 'react'
 import { merge } from 'lodash'
 
 export class Modal extends Component {
-  constructor() {
-    super()
+  constructor(props) {
+    super(props)
     this.orderList = {}
+    this.state = {
+      currentIndex: props.currentIndex
+    }
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if (this.state.currentIndex !== nextProps.currentIndex) {
+      setTimeout(() => {
+        this.setState({ currentIndex: nextProps.currentIndex })
+      }, nextProps.fadeMode ? nextProps.fadeSpeed : 0)
+    }
   }
 
   componentWillMount() {
@@ -18,7 +29,7 @@ export class Modal extends Component {
   renderChildren() {
     const { children, ...rest } = this.props
     return children.map((child, index) => {
-      const isCurrentIndex = index === rest.currentIndex && !rest.isSwitching
+      const isCurrentIndex = index === this.state.currentIndex
       const props = merge({}, rest, {
         key: index,
         setRef: (c) => this.orderList[`order${index}`] = c,

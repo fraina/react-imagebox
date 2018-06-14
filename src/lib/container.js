@@ -7,11 +7,9 @@ export class Container extends Component {
   constructor(props) {
     super(props)
 
-    this._haveInit = false
     this._timeoutQueue = []
 
-
-    this._defaultState = this.getConfig()
+    this._defaultState = this.getConfig({ params: props, isInit: true })
     this.state = this._defaultState
 
     this.onClickPrev = this.onClickPrev.bind(this)
@@ -24,55 +22,48 @@ export class Container extends Component {
     this.modal = null
   }
 
-  getConfig(params = this.props) {
-    if (!params) return {}
+  getConfig({ params, isInit }) {
     const defaultConfig = {
       overlayOpacity: 0.75,
       show: false,
       fadeIn: false,
       fadeInSpeed: 500,
       fadeOut: true,
-      fadeOutSpeed: 500
-    }
-
-    const defaultTitlebarConfig = {
-      enable: true,
-      closeButton: true,
-      closeText: '✕',
-      position: 'top',
-      prevText: '﹤',
-      nextText: '﹥',
+      fadeOutSpeed: 500,
+      isSwitching: true,
       currentIndex: 0,
+      titleBar: {
+        enable: true,
+        closeButton: true,
+        closeText: '✕',
+        position: 'top',
+        prevText: '﹤',
+        nextText: '﹥'
+      },
+      lightbox: {
+        speed: 500,
+        smoothResize: true,
+        fadeMode: true,
+        fadeSpeed: 300,
 
-      isSwitching: true
+        loop: true,
+        clickSwitch: true,
+        compatible: true,
+
+        maxHeight: 800,
+        maxWidth: 1000,
+        minHeight: 0,
+        minWidth: 0,
+        initWidth: 200,
+        initHeight: 200
+      }
     }
+    if (isInit && !params) return defaultConfig
 
-    const defaultLightboxConfig = {
-      speed: 500,
-      smoothResize: true,
-      fadeMode: true,
-      fadeSpeed: 300,
-
-      loop: true,
-      clickSwitch: true,
-      compatible: true,
-
-      maxHeight: 800,
-      maxWidth: 1000,
-      minHeight: 0,
-      minWidth: 0,
-      initWidth: 200,
-      initHeight: 200
-    }
-
-    const _config = merge({}, defaultConfig, omit(params, [ 'children', 'lightbox' ]))
-    this._lightboxConfig = merge({}, defaultLightboxConfig, params.lightbox)
-    return merge({}, _config, defaultTitlebarConfig, params.titleBar, {
-      children: null,
-      callback: {},
-      currentWidth: get(this._lightboxConfig, 'initWidth'),
-      currentHeight: get(this._lightboxConfig, 'initHeight'),
-      lightboxConfig: this._lightboxConfig
+    const _config = merge({}, isInit ? defaultConfig : this._defaultState, params)
+    return merge({}, _config, {
+      currentWidth: get(_config.lightbox, 'initWidth'),
+      currentHeight: get(_config.lightbox, 'initHeight')
     })
   }
 
@@ -91,25 +82,30 @@ export class Container extends Component {
       const { fadeIn, fadeOut, fadeInSpeed, fadeOutSpeed } = this.state
       if (show) {
         const { onComplete } = this.props
-        this.setState(merge({}, this.getConfig(config), {
-          children: children,
-          show: true,
-          transition: (fadeIn) ? `all ${(fadeInSpeed / 1000)}s ease-in-out` : 'none',
-          callback: setTimeout(() => {
-            onComplete && onComplete()
-          }, fadeInSpeed + 1)
-        }))
-        setTimeout(() => {this.onOpen(index)}, 0)
+        this.setState(
+          merge({}, this.getConfig({ params: config, isInit: false }), {
+            show: true,
+            children: children,
+            transition: (fadeIn) ? `all ${(fadeInSpeed / 1000)}s ease-in-out` : 'none'
+          })
+        )
+
+        this._timeoutQueue.push(setTimeout(() => {
+          onComplete && onComplete()
+        }, fadeInSpeed + 1))
+
+        this.onOpen(index)
       } else {
         const { onCleanUp } = this.props
         onCleanUp && onCleanUp()
         this.setState({
           show: false,
-          transition: (fadeOut) ? `all ${fadeOutSpeed / 1000}s ease-in-out` : 'none',
-          callback: setTimeout(() => {
-            this.onClosed()
-          }, fadeOutSpeed + 1)
+          transition: (fadeOut) ? `all ${fadeOutSpeed / 1000}s ease-in-out` : 'none'
         })
+
+        this._timeoutQueue.push(setTimeout(() => {
+          this.onClosed()
+        }, fadeOutSpeed + 1))
       }
     }
   }
@@ -132,27 +128,20 @@ export class Container extends Component {
   }
 
   onOpen(index) {
-    this._haveInit = true
-    this.cleanUp()
+    const { speed, initHeight, initWidth } = this.state.lightbox
     const { onOpen } = this.props
     onOpen && onOpen()
-
-    const trasitionSpeed = this.state.lightboxConfig.speed || 0
-    const { currentWidth, currentHeight } = this.getCurrentSize(index)
+    
+    const trasitionSpeed = speed || 0
     this.setState({
       isSwitching: true,
       currentIndex: index,
-      currentWidth: currentWidth,
-      currentHeight: currentHeight,
-      lightboxConfig: merge({}, this.state.lightboxConfig, {
-        smoothResize: this._lightboxConfig.smoothResize
-      })
+      currentWidth: initWidth,
+      currentHeight: initHeight
     })
 
     this._timeoutQueue.push(setTimeout(() => {
-      this.setState({
-        isSwitching: false
-      })
+      this.setState({ isSwitching: false })
     }, trasitionSpeed))
 
     window.onresize = () => {
@@ -168,8 +157,9 @@ export class Container extends Component {
     const { onClosed } = this.props
     onClosed && onClosed()
     this.setState(merge({}, this._defaultState, {
-      lightboxConfig: merge({}, this.state.lightboxConfig, { smoothResize: false })
+      lightbox: merge({}, this.state.lightbox, { smoothResize: false })
     }))
+    this.cleanUp()
   }
 
   onClickPrev() {
@@ -190,37 +180,29 @@ export class Container extends Component {
 
   onChangeIndex(newIndex) {
     this.cleanUp()
-    const { speed, fadeSpeed, fadeMode } = this.state.lightboxConfig
-    const { currentWidth, currentHeight } = this.getCurrentSize(newIndex)
+    const { speed, fadeMode } = this.state.lightbox
     this.state.isSwitching = true
-    this.newIndex = newIndex
     this.state.currentIndex = newIndex
     this.forceUpdate()
-
-    this._timeoutQueue.push(setTimeout(() => {
-      this.state.currentWidth = currentWidth || this.state.minWidth
-      this.state.currentHeight = currentHeight || this.state.minHeight
-      this.forceUpdate()
-    }, fadeMode && fadeSpeed || 0))
 
     this._timeoutQueue.push(setTimeout(() => {
       this.setState({
         isSwitching: false
       })
-    }, fadeMode ? (speed || 0) + (fadeSpeed || 0) : 0))
+    }, fadeMode ? speed : 0))
 
   }
 
   getCurrentSize(index = this.state.currentIndex) {
-    if (!this.modal) return { currentWidth: this.state.lightboxConfig.initWidth, currentHeight: this.state.lightboxConfig.initHeight }
+    if (!this.modal) return { currentWidth: this.state.lightbox.initWidth, currentHeight: this.state.lightbox.initHeight }
 
-    const { maxHeight, maxWidth, compatible } = this.state.lightboxConfig
+    const { maxHeight, maxWidth, compatible } = this.state.lightbox
     const currentChildren = this.modal.getPanel(index)
     const { width: imgWidth, height: imgHeight } = currentChildren.size()
     const clientWidth = document.body.clientWidth - 18
     const clientHeight = document.body.clientHeight - 68
 
-    var currentWidth, currentHeight, ratio
+    let currentWidth, currentHeight, ratio
     if (maxWidth && imgWidth > maxWidth && imgWidth > imgHeight) {
       ratio =  (compatible && clientWidth < maxWidth ? clientWidth : maxWidth) / imgWidth
       currentWidth = (compatible && clientWidth < maxWidth) ? clientWidth : maxWidth
@@ -248,7 +230,7 @@ export class Container extends Component {
   }
 
   onClickContent() {
-    const { currentIndex, lightboxConfig: { clickSwitch, loop } } = this.state
+    const { currentIndex, lightbox: { clickSwitch, loop } } = this.state
     const children = get(this.state, 'children.props.children')
     const isLastImage = children.length === currentIndex + 1
     if (!clickSwitch || (!loop && isLastImage)) return
@@ -256,16 +238,16 @@ export class Container extends Component {
   }
 
   cleanUp() {
-    clearTimeout(this.state.callback)
     this._timeoutQueue.forEach((timeout) => {
       clearTimeout(timeout)
     })
+    this._timeoutQueue = []
   }
 
   renderTitleBar() {
-    const { className, closeText, prevText, nextText, closeButton, closeButtonClassName, currentIndex } = this.state
+    const { currentIndex } = this.state
+    const { className, closeText, prevText, nextText, closeButton, closeButtonClassName } = this.state.titleBar
     const children = get(this.state, 'children.props.children', [])
-
     const isLastImage = children.length === currentIndex + 1
     const isFirstImage = currentIndex === 0
 
@@ -293,14 +275,14 @@ export class Container extends Component {
           <button
             onClick={this.onClickPrev}
             className="lightbox-btn lightbox-btn--prev"
-            disabled={!this.state.lightboxConfig.loop && isFirstImage}>
+            disabled={!this.state.lightbox.loop && isFirstImage}>
             { prevText }
           </button>
           <div className="lightbox-imgIndex">{currentIndex + 1} / {children.length}</div>
           <button
             onClick={this.onClickNext}
             className="lightbox-btn lightbox-btn--next"
-            disabled={!this.state.lightboxConfig.loop && isLastImage}>
+            disabled={!this.state.lightbox.loop && isLastImage}>
             { nextText }
           </button>
         </div>
@@ -317,7 +299,7 @@ export class Container extends Component {
   }
 
   handleImageLoaded() {
-    if (!this._haveInit) return
+
     const { currentWidth, currentHeight } = this.getCurrentSize(this.state.currentIndex)
     this.setState({
       currentWidth: currentWidth,
@@ -326,10 +308,7 @@ export class Container extends Component {
   }
 
   renderChildren() {
-    const { children } = this.state
-    if (children === null) return <div></div>
-
-    const { fadeMode, fadeSpeed } = this.state.lightboxConfig
+    const { fadeMode, fadeSpeed, initHeight, initWidth } = this.state.lightbox
     const childProps = {
       show: this.state.show,
       fadeMode,
@@ -337,23 +316,24 @@ export class Container extends Component {
       setRef: c => this.modal = c,
       currentIndex: this.state.currentIndex,
       handleImageLoaded: this.handleImageLoaded,
-      haveInit: this._haveInit,
-      isSwitching: this.state.isSwitching
+      isSwitching: this.state.isSwitching,
+      initHeight,
+      initWidth
     }
-    return cloneElement(children, childProps)
+    return cloneElement(this.state.children, childProps)
   }
 
   render() {
-    const titleBar = this.state
     const {
       overlayOpacity,
       show,
-      className
-    } = this.state
-    const {
+      className,
+      titleBar,
       currentWidth,
       currentHeight,
-      lightboxConfig: {
+      isSwitching,
+      children,
+      lightbox: {
         smoothResize,
         speed,
         maxWidth,
@@ -376,16 +356,16 @@ export class Container extends Component {
     return (
       <div className={ classNames('imagebox', { 'is-active': show }) }
         data-type="lightbox"
-        data-title={ (titleBar.enable) ? titleBar.position : null }
+        data-title={ (titleBar.enable) ? titleBar.position : undefined }
         style={{ transition: this.state.transition }}>
         <div className={classNames('imagebox-wrapper', className)}>
           { titleBar.enable && this.renderTitleBar() }
           <div className="imagebox-content" style={contentStyle} onClick={this.onClickContent}>
-            <span className="imagebox-loading" hidden={!this.state.isSwitching}></span>
-            {this.renderChildren()}
+            <span className="imagebox-loading" hidden={!isSwitching}></span>
+            {children && this.renderChildren()}
           </div>
         </div>
-        <div className="imagebox-overlay" style={{ opacity: overlayOpacity }} onClick={ this.closeImagebox } />
+        <div className="imagebox-overlay" style={{ opacity: overlayOpacity }} onClick={this.closeImagebox} />
       </div>
     )
   }

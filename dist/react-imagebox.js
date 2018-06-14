@@ -17889,6 +17889,8 @@ var Container = exports.Container = function (_Component) {
 
       var defaultConfig = {
         overlayOpacity: 0.75,
+        overlayClose: true,
+        escClose: true,
         show: false,
         fadeIn: false,
         fadeInSpeed: 500,
@@ -17933,6 +17935,7 @@ var Container = exports.Container = function (_Component) {
   }, {
     key: 'onKeyDown',
     value: function onKeyDown(e) {
+      if (!this.state.escClose) return;
       if (this.state.show && e.keyCode === 27) {
         this.closeImagebox();
       }
@@ -18282,6 +18285,7 @@ var Container = exports.Container = function (_Component) {
     value: function render() {
       var _state3 = this.state,
           overlayOpacity = _state3.overlayOpacity,
+          overlayClose = _state3.overlayClose,
           show = _state3.show,
           className = _state3.className,
           titleBar = _state3.titleBar,
@@ -18325,7 +18329,7 @@ var Container = exports.Container = function (_Component) {
             children && this.renderChildren()
           )
         ),
-        _react2.default.createElement('div', { className: 'imagebox-overlay', style: { opacity: overlayOpacity }, onClick: this.closeImagebox })
+        _react2.default.createElement('div', { className: 'imagebox-overlay', style: { opacity: overlayOpacity }, onClick: overlayClose ? this.closeImagebox : undefined })
       );
     }
   }]);

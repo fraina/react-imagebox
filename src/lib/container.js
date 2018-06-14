@@ -25,6 +25,8 @@ export class Container extends Component {
   getConfig({ params, isInit }) {
     const defaultConfig = {
       overlayOpacity: 0.75,
+      overlayClose: true,
+      escClose: true,
       show: false,
       fadeIn: false,
       fadeInSpeed: 500,
@@ -68,6 +70,7 @@ export class Container extends Component {
   }
 
   onKeyDown(e) {
+    if (!this.state.escClose) return
     if ((this.state.show) && (e.keyCode === 27)) {
       this.closeImagebox()
     }
@@ -326,6 +329,7 @@ export class Container extends Component {
   render() {
     const {
       overlayOpacity,
+      overlayClose,
       show,
       className,
       titleBar,
@@ -365,7 +369,7 @@ export class Container extends Component {
             {children && this.renderChildren()}
           </div>
         </div>
-        <div className="imagebox-overlay" style={{ opacity: overlayOpacity }} onClick={this.closeImagebox} />
+        <div className="imagebox-overlay" style={{ opacity: overlayOpacity }} onClick={overlayClose ? this.closeImagebox : undefined} />
       </div>
     )
   }

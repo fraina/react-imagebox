@@ -1,12 +1,12 @@
 {
   "name": "react-imagebox",
-  "version": "1.0.2",
+  "version": "2.0.0",
   "description": "A simple image lightbox component for react",
   "main": "dist/react-imagebox.js",
   "typings": "dist/react-imagebox.d.ts",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Fraina/react-imagebox.git"
+    "url": "git+https://github.com/fraina/react-imagebox.git"
   },
   "keywords": [
     "react",
@@ -17,9 +17,9 @@
   "author": "Faryn Huang <jscaem@gmail.com> (http://github.com/fraina)",
   "license": "MIT",
   "bugs": {
-    "url": "http://github.com/Fraina/react-imagebox/issues"
+    "url": "http://github.com/fraina/react-imagebox/issues"
   },
-  "homepage": "http://github.com/Fraina/react-imagebox#readme",
+  "homepage": "http://github.com/fraina/react-imagebox#readme",
   "scripts": {
     "build": "./node_modules/.bin/webpack --config webpack.config.js",
     "dist": "npm run build; cp ./src/css/react-imagebox.css ./dist/react-imagebox.css"
